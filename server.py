@@ -9,7 +9,7 @@ from typing import List, Dict, Optional
 from pydantic import BaseModel
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
-from vars import Assumption, Domain, ODEHint
+from vars import Assumption, Domain, ODEHint, PDEHint
 from sympy import Eq, Function, dsolve
 from sympy.solvers.pde import pdsolve
 
@@ -401,6 +401,18 @@ def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) ->
         func_name: The name of the function (previously introduced) to solve for.
         hint: Optional solving method from ODEHint enum. If None, SymPy will try to determine the best method.
 
+    Example:
+        # First introduce a variable and a function
+        intro("x", [Assumption.REAL], [])
+        introduce_function("f")
+        
+        # Create a second-order ODE: f''(x) + 9*f(x) = 0
+        expr_key = introduce_expression("Derivative(f(x), x, x) + 9*f(x)")
+        
+        # Solve the ODE
+        result = dsolve_ode(expr_key, "f")
+        # Returns solution with sin(3*x) and cos(3*x) terms
+
     Returns:
         A LaTeX string representing the solution. Returns an error message string if issues occur.
     """
@@ -437,7 +449,7 @@ def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) ->
 
 
 @mcp.tool()
-def pdsolve_pde(expr_key: str, func_name: str) -> str:
+def pdsolve_pde(expr_key: str, func_name: str, hint: Optional[PDEHint] = None) -> str:
     """Solves a partial differential equation using SymPy's pdsolve function.
 
     Args:
@@ -446,6 +458,21 @@ def pdsolve_pde(expr_key: str, func_name: str) -> str:
                  PDE = 0.
         func_name: The name of the function (previously introduced) to solve for.
                    This should be a function of multiple variables.
+
+    Example:
+        # First introduce variables and a function
+        intro("x", [Assumption.REAL], [])
+        intro("y", [Assumption.REAL], [])
+        introduce_function("f")
+        
+        # Create a PDE: 1 + 2*(ux/u) + 3*(uy/u) = 0
+        expr_key = introduce_expression(
+            "Eq(1 + 2*Derivative(f(x, y), x)/f(x, y) + 3*Derivative(f(x, y), y)/f(x, y), 0)"
+        )
+        
+        # Solve the PDE
+        result = pdsolve_pde(expr_key, "f")
+        # Returns solution with exponential terms and arbitrary function
 
     Returns:
         A LaTeX string representing the solution. Returns an error message string if issues occur.
@@ -466,7 +493,10 @@ def pdsolve_pde(expr_key: str, func_name: str) -> str:
             eq = sympy.Eq(expression, 0)
 
         # Let SymPy's pdsolve find the dependent variable itself
-        solution = pdsolve(eq)
+        if hint is not None:
+            solution = pdsolve(eq, hint=hint.value)
+        else:
+            solution = pdsolve(eq)
 
         # Convert the solution to LaTeX format
         latex_output = sympy.latex(solution)

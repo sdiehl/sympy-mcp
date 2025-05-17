@@ -4,7 +4,7 @@ This is Model Context Protocol server that exposes stateful symbolic manipulatio
 
 ## Why?
 
-Language models absolutely *suck* at symbolic manipulation. They randomly drop variables, make up random constants, permute variables and generally make a mess. But we have awesome tools for symbolic manipulation, so we can use tool-calling to call out to to give them the ability to manipulate sequences of expressions.
+Language models absolutely *absolutely abysmal* at symbolic manipulation. They randomly drop variables, make up random constants, permute variables and generally make a mess. But we have awesome tools for symbolic manipulation, so we can use tool-calling to call out to to give them the ability to manipulate sequences of expressions.
 
 ## Usage
 

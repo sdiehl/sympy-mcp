@@ -104,3 +104,9 @@ class ODEHint(Enum):
     SECOND_NONLINEAR_AUTONOMOUS_CONSERVED_INTEGRAL = (
         "2nd_nonlinear_autonomous_conserved_Integral"
     )
+
+class PDEHint(Enum):
+    FIRST_LINEAR_CONSTANT_COEFF_HOMOGENEOUS = "1st_linear_constant_coeff_homogeneous"
+    FIRST_LINEAR_CONSTANT_COEFF = "1st_linear_constant_coeff"
+    FIRST_LINEAR_CONSTANT_COEFF_INTEGRAL = "1st_linear_constant_coeff_Integral"
+    FIRST_LINEAR_VARIABLE_COEFF = "1st_linear_variable_coeff"
