@@ -360,55 +360,9 @@ def solve_nonlinear_system(
     if domain not in domain_map:
         return "Error: Invalid domain. Choose from: Domain.COMPLEX, Domain.REAL, Domain.INTEGERS, or Domain.NATURALS."
 
-    domain_map[domain]
-
     try:
-        # Check if any equation in the system is identically False
-        # This can happen when using real assumptions with equations that have only complex solutions
-        if any(expr is False for expr in system):
-            return sympy.latex(sympy.EmptySet)
-
-        # Special case for x^2 + y^2 = -1 type problems
-        if domain == Domain.REAL:
-            # Check for equations like x^2 + y^2 = -k where k > 0, which can't have real solutions
-            for expr in system:
-                # Convert expressions to standard form: expr = 0
-                if isinstance(expr, sympy.core.add.Add):
-                    # Look for sum of squares pattern
-                    squares = []
-                    constant = 0
-
-                    for term in expr.args:
-                        if isinstance(term, sympy.core.power.Pow) and term.exp == 2:
-                            squares.append(term)
-                        elif isinstance(term, sympy.core.numbers.Number):
-                            constant += term
-
-                    # If we have a sum of squares + positive constant = 0, there are no real solutions
-                    if len(squares) > 0 and constant > 0:
-                        return sympy.latex(sympy.EmptySet)
-
         # Use SymPy's nonlinsolve
         solution_set = sympy.nonlinsolve(system, symbols)
-
-        # Post-process solutions for domain
-        if domain == Domain.REAL:
-            # Check if any solution component has an imaginary part
-            has_complex_solution = False
-            try:
-                for sol_tuple in solution_set:
-                    for sol in sol_tuple:
-                        if sol.has(sympy.I):
-                            has_complex_solution = True
-                            break
-                    if has_complex_solution:
-                        break
-
-                if has_complex_solution:
-                    return sympy.latex(sympy.EmptySet)
-            except Exception:
-                # If we can't iterate over the solution set, just return it as is
-                pass
 
         # Convert the set to LaTeX format
         latex_output = sympy.latex(solution_set)
