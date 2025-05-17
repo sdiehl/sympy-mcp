@@ -6,41 +6,120 @@ import sympy
 import argparse
 import logging
 from typing import List, Dict
+from pydantic import BaseModel  # Added for Pydantic model
 from sympy.parsing.sympy_parser import parse_expr
+from sympy.core.facts import InconsistentAssumptions
 from vars import Assumption
 from sympy import FiniteSet  # Added for creating solution sets
 
 logger = logging.getLogger(__name__)
 
 # Create an MCP server
-mcp = FastMCP("sympy-mcp", dependencies=["sympy"])
+mcp = FastMCP("sympy-mcp", dependencies=["sympy", "pydantic"])
 
 # Global store for sympy variables and expressions
 local_vars: Dict[str, sympy.Symbol] = {}
 expressions: Dict[str, sympy.Expr] = {}
 expression_counter = 0
 
+
+# Pydantic model for defining a variable with assumptions
+class VariableDefinition(BaseModel):
+    var_name: str
+    pos_assumptions: List[str] = []
+    neg_assumptions: List[str] = []
+
+
 # x, y = symbols('x, y', commutative=False)
 
 
 # Add an addition tool
 @mcp.tool()
-def introduce(var_name: str, var_type: List[Assumption]) -> str:
-    """Introduces a sympy variable with specified assumptions and stores it."""
+def intro(
+    var_name: str, pos_assumptions: List[Assumption], neg_assumptions: List[Assumption]
+) -> str:
+    """Introduces a sympy variable with specified assumptions and stores it.
+
+    Takes a variable name and a list of positive and negative assumptions.
+    """
     kwargs_for_symbols = {}
     # Add assumptions
-    for assumption_obj in var_type:
+    for assumption_obj in pos_assumptions:
         kwargs_for_symbols[assumption_obj.value] = True
 
-    # If commutative was not explicitly set by user, symbols() defaults to commutative=True, which is fine.
-    # If user explicitly said Assumption.COMMUTATIVE, it's set to True.
-    # If user explicitly said NONCOMMUTATIVE, it's set to False.
+    for assumption_obj in neg_assumptions:
+        kwargs_for_symbols[assumption_obj.value] = False
 
-    var = sympy.symbols(var_name, **kwargs_for_symbols)
+    try:
+        var = sympy.symbols(var_name, **kwargs_for_symbols)
+    except InconsistentAssumptions as e:
+        return f"Error creating symbol '{var_name}': The provided assumptions {kwargs_for_symbols} are inconsistent according to SymPy. Details: {str(e)}"
+    except Exception as e:
+        return f"Error creating symbol '{var_name}': An unexpected error occurred. Assumptions attempted: {kwargs_for_symbols}. Details: {type(e).__name__} - {str(e)}"
+
     local_vars[var_name] = var
     return var_name
 
 
+# Introduce multiple variables simultaneously
+@mcp.tool()
+def intro_many(variables: List[VariableDefinition]) -> str:
+    """Introduces multiple sympy variables with specified assumptions and stores them.
+
+    Takes a list of VariableDefinition objects for the 'variables' parameter.
+    Each object in the list specifies:
+    - var_name: The name of the variable (string).
+    - pos_assumptions: A list of positive assumption strings (e.g., ["real", "positive"]).
+    - neg_assumptions: A list of negative assumption strings (e.g., ["complex"]).
+
+    The JSON payload for the 'variables' argument should be a direct list of these objects, for example:
+    ```json
+    [
+        {
+            "var_name": "x",
+            "pos_assumptions": ["real", "positive"],
+            "neg_assumptions": ["complex"]
+        },
+        {
+            "var_name": "y",
+            "pos_assumptions": [],
+            "neg_assumptions": ["commutative"]
+        }
+    ]
+    ```
+
+    The assumptions must be consistent, so a real number is not allowed to be non-commutative.
+
+    Prefer this over intro() for multiple variables because it's more efficient.
+    """
+    var_keys = {}
+    for var_def in variables:
+        try:
+            processed_pos_assumptions = [
+                Assumption(a_str) for a_str in var_def.pos_assumptions
+            ]
+            processed_neg_assumptions = [
+                Assumption(a_str) for a_str in var_def.neg_assumptions
+            ]
+        except ValueError as e:
+            # Handle cases where a string doesn't match an Assumption enum member
+            msg = (
+                f"Error for variable '{var_def.var_name}': Invalid assumption string provided. {e}. "
+                f"Ensure assumptions match valid enum values in 'vars.Assumption'."
+            )
+            logger.error(msg)
+            return msg  # Or collect errors
+
+        var_key = intro(
+            var_def.var_name, processed_pos_assumptions, processed_neg_assumptions
+        )
+        var_keys[var_def.var_name] = var_key
+
+    # Return the mapping of variable names to keys
+    return str(var_keys)
+
+
+# XXX use local_vars {x : "expr_1", y : "expr_2"}
 @mcp.tool()
 def introduce_expression(expr_str: str) -> str:
     """Parses a sympy expression string using available local variables and stores it."""
