@@ -10,7 +10,7 @@ from pydantic import BaseModel  # Added for Pydantic model
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
 from vars import Assumption
-from sympy import FiniteSet  # Added for creating solution sets
+from sympy import Eq, FiniteSet  # Added for creating solution sets
 
 logger = logging.getLogger(__name__)
 
@@ -121,14 +121,30 @@ def intro_many(variables: List[VariableDefinition]) -> str:
 
 # XXX use local_vars {x : "expr_1", y : "expr_2"}
 @mcp.tool()
-def introduce_expression(expr_str: str) -> str:
-    """Parses a sympy expression string using available local variables and stores it."""
+def introduce_expression(expr_str: str, canonicalize: bool = True) -> str:
+    """Parses a sympy expression string using available local variables and stores it.
+
+    Applies default Sympy canonicalization rules unless canonicalize is False.
+
+    For equations (x^2 = 1) make the input string "Eq(x^2, 1") not "x^2 == 1"
+    """
     global expression_counter
-    parsed_expr = parse_expr(expr_str, local_dict=local_vars)
+    parsed_expr = parse_expr(expr_str, local_dict=local_vars, evaluate=canonicalize)
     expr_key = f"expr_{expression_counter}"
     expressions[expr_key] = parsed_expr
     expression_counter += 1
     return expr_key
+
+
+def introduce_equation(lhs_str: str, rhs_str: str) -> str:
+    """Introduces an equation (lhs = rhs) using available local variables."""
+    global expression_counter
+    lhs_expr = parse_expr(lhs_str, local_dict=local_vars)
+    rhs_expr = parse_expr(rhs_str, local_dict=local_vars)
+    eq_key = f"eq_{expression_counter}"
+    expressions[eq_key] = Eq(lhs_expr, rhs_expr)
+    expression_counter += 1
+    return eq_key
 
 
 @mcp.tool()
