@@ -15,3 +15,9 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.11.10",
 ]
+relativity = [
+    "einsteinpy>=0.4.0",
+]
+
+[tool.uv]
+default-groups = []

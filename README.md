@@ -2,6 +2,10 @@
 
 This is Model Context Protocol server that exposes stateful symbolic manipulation tools to a LLM. So it can manipulate mathematical expressions and equations.
 
+## Why?
+
+Language models absolutely *suck* at symbolic manipulation. They randomly drop variables, make up random constants, permute variables and generally make a mess. But we have awesome tools for symbolic manipulation, so we can use tool-calling to call out to to give them the ability to manipulate sequences of expressions.
+
 ## Usage
 
 ```bash
