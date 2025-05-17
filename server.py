@@ -124,9 +124,16 @@ def intro_many(variables: List[VariableDefinition]) -> str:
 def introduce_expression(expr_str: str, canonicalize: bool = True) -> str:
     """Parses a sympy expression string using available local variables and stores it.
 
+    Uses Sympy parse_expr to parse the expression string.
+
     Applies default Sympy canonicalization rules unless canonicalize is False.
 
     For equations (x^2 = 1) make the input string "Eq(x^2, 1") not "x^2 == 1"
+
+    Examples:
+
+        {expr_str: "Eq(x^2 + y^2, 1)"}
+        {expr_str: "Matrix(((25, 15, -5), (15, 18, 0), (-5, 0, 11)))"}
     """
     global expression_counter
     parsed_expr = parse_expr(expr_str, local_dict=local_vars, evaluate=canonicalize)
