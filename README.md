@@ -53,4 +53,4 @@ This configuration tells Claude Desktop to launch the Docker container when need
 
 ## Security Disclaimer
 
-This server runs on your computer and gives Claude access to run Python logic. Notably this server uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates.
+This server runs on your computer and gives Claude access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.

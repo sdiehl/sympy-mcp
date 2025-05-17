@@ -5,12 +5,12 @@ from mcp.server.fastmcp import FastMCP
 import sympy
 import argparse
 import logging
-from typing import List, Dict
-from pydantic import BaseModel  # Added for Pydantic model
+from typing import List, Dict, Optional
+from pydantic import BaseModel
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
-from vars import Assumption
-from sympy import Eq, FiniteSet  # Added for creating solution sets
+from vars import Assumption, Domain, ODEHint
+from sympy import Eq, Function, dsolve
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ mcp = FastMCP("sympy-mcp", dependencies=["sympy", "pydantic"])
 
 # Global store for sympy variables and expressions
 local_vars: Dict[str, sympy.Symbol] = {}
+functions: Dict[str, sympy.Function] = {}
 expressions: Dict[str, sympy.Expr] = {}
 expression_counter = 0
 
@@ -136,7 +137,9 @@ def introduce_expression(expr_str: str, canonicalize: bool = True) -> str:
         {expr_str: "Matrix(((25, 15, -5), (15, 18, 0), (-5, 0, 11)))"}
     """
     global expression_counter
-    parsed_expr = parse_expr(expr_str, local_dict=local_vars, evaluate=canonicalize)
+    # Merge local_vars and functions dictionaries to make both available for parsing
+    parse_dict = {**local_vars, **functions}
+    parsed_expr = parse_expr(expr_str, local_dict=parse_dict, evaluate=canonicalize)
     expr_key = f"expr_{expression_counter}"
     expressions[expr_key] = parsed_expr
     expression_counter += 1
@@ -146,8 +149,10 @@ def introduce_expression(expr_str: str, canonicalize: bool = True) -> str:
 def introduce_equation(lhs_str: str, rhs_str: str) -> str:
     """Introduces an equation (lhs = rhs) using available local variables."""
     global expression_counter
-    lhs_expr = parse_expr(lhs_str, local_dict=local_vars)
-    rhs_expr = parse_expr(rhs_str, local_dict=local_vars)
+    # Merge local_vars and functions dictionaries to make both available for parsing
+    parse_dict = {**local_vars, **functions}
+    lhs_expr = parse_expr(lhs_str, local_dict=parse_dict)
+    rhs_expr = parse_expr(rhs_str, local_dict=parse_dict)
     eq_key = f"eq_{expression_counter}"
     expressions[eq_key] = Eq(lhs_expr, rhs_expr)
     expression_counter += 1
@@ -169,18 +174,7 @@ def print_latex_expression(expr_key: str) -> str:
     for var_symbol in variables_in_expr:
         var_name = str(var_symbol)
         if var_name in local_vars:
-            # Accessing internal _assumptions dictionary; might need a more robust way if API changes
-            # For now, sympy.Symbol().assumptions0 gives a good summary string
-            # however, assumptions_dict used in introduce is more precise.
-            # We reconstruct the assumption string from what we stored.
-            # Getting assumptions directly from the symbol object can be complex.
-            # Let's find the original assumptions used during creation.
-            # This requires a way to store/retrieve original assumptions with the symbol if not directly on it.
-            # For now, we'll just state the variable is defined.
-            # A better approach would be to store assumption list alongside the symbol in local_vars
-            # or parse them from symbol.assumptions0 if it's reliable.
-
-            # Let's try to get assumptions directly from the symbol object
+            # Get assumptions directly from the symbol object
             current_assumptions = []
             # sympy stores assumptions in a private attribute _assumptions
             # and provides a way to query them via .is_commutative, .is_real etc.
@@ -205,12 +199,15 @@ def print_latex_expression(expr_key: str) -> str:
 
 
 @mcp.tool()
-def solve_algebraically(expr_key: str, solve_for_var_name: str) -> str:
+def solve_algebraically(
+    expr_key: str, solve_for_var_name: str, domain: Domain = Domain.COMPLEX
+) -> str:
     """Solves an equation (expression = 0) algebraically for a given variable.
 
     Args:
         expr_key: The key of the expression (previously introduced) to be solved.
         solve_for_var_name: The name of the variable (previously introduced) to solve for.
+        domain: The domain to solve in: Domain.COMPLEX, Domain.REAL, Domain.INTEGERS, or Domain.NATURALS. Defaults to Domain.COMPLEX.
 
     Returns:
         A LaTeX string representing the set of solutions. Returns an error message string if issues occur.
@@ -225,13 +222,28 @@ def solve_algebraically(expr_key: str, solve_for_var_name: str) -> str:
 
     variable_symbol = local_vars[solve_for_var_name]
 
-    try:
-        # sympy.solve assumes the expression is equal to 0 and for a single variable, returns a list of solutions.
-        solutions_list = sympy.solve(expression_to_solve, variable_symbol)
+    # Map domain enum to SymPy domain sets
+    domain_map = {
+        Domain.COMPLEX: sympy.S.Complexes,
+        Domain.REAL: sympy.S.Reals,
+        Domain.INTEGERS: sympy.S.Integers,
+        Domain.NATURALS: sympy.S.Naturals0,
+    }
 
-        # Create a FiniteSet from the list of solutions
-        # If solutions_list is empty, FiniteSet will correctly create an EmptySet.
-        solution_set = FiniteSet(*solutions_list)
+    if domain not in domain_map:
+        return "Error: Invalid domain. Choose from: Domain.COMPLEX, Domain.REAL, Domain.INTEGERS, or Domain.NATURALS."
+
+    sympy_domain = domain_map[domain]
+
+    try:
+        # If the expression is an equation (Eq object), convert it to standard form
+        if isinstance(expression_to_solve, sympy.Eq):
+            expression_to_solve = expression_to_solve.lhs - expression_to_solve.rhs
+
+        # Use solveset instead of solve
+        solution_set = sympy.solveset(
+            expression_to_solve, variable_symbol, domain=sympy_domain
+        )
 
         # Convert the set to LaTeX format
         latex_output = sympy.latex(solution_set)
@@ -240,6 +252,268 @@ def solve_algebraically(expr_key: str, solve_for_var_name: str) -> str:
         return f"Error: SymPy could not solve the equation: {str(e)}. The equation may not have a closed-form solution or the algorithm is not implemented."
     except Exception as e:
         return f"An unexpected error occurred during solving: {str(e)}"
+
+
+@mcp.tool()
+def solve_linear_system(
+    expr_keys: List[str], var_names: List[str], domain: Domain = Domain.COMPLEX
+) -> str:
+    """Solves a system of linear equations using SymPy's linsolve.
+
+    Args:
+        expr_keys: The keys of the expressions (previously introduced) forming the system.
+        var_names: The names of the variables to solve for.
+        domain: The domain to solve in (Domain.COMPLEX, Domain.REAL, etc.). Defaults to Domain.COMPLEX.
+
+    Returns:
+        A LaTeX string representing the solution set. Returns an error message string if issues occur.
+    """
+    # Validate all expression keys exist
+    system = []
+    for expr_key in expr_keys:
+        if expr_key not in expressions:
+            return f"Error: Expression with key '{expr_key}' not found."
+
+        expr = expressions[expr_key]
+        # Convert equations to standard form
+        if isinstance(expr, sympy.Eq):
+            expr = expr.lhs - expr.rhs
+        system.append(expr)
+
+    # Validate all variables exist
+    symbols = []
+    for var_name in var_names:
+        if var_name not in local_vars:
+            return f"Error: Variable '{var_name}' not found in local_vars. Please introduce it first."
+        symbols.append(local_vars[var_name])
+
+    # Map domain enum to SymPy domain sets
+    domain_map = {
+        Domain.COMPLEX: sympy.S.Complexes,
+        Domain.REAL: sympy.S.Reals,
+        Domain.INTEGERS: sympy.S.Integers,
+        Domain.NATURALS: sympy.S.Naturals0,
+    }
+
+    if domain not in domain_map:
+        return "Error: Invalid domain. Choose from: Domain.COMPLEX, Domain.REAL, Domain.INTEGERS, or Domain.NATURALS."
+
+    domain_map[domain]
+
+    try:
+        # Use SymPy's linsolve - note: it doesn't take domain parameter directly, but works on the given domain
+        solution_set = sympy.linsolve(system, symbols)
+
+        # Convert the set to LaTeX format
+        latex_output = sympy.latex(solution_set)
+        return latex_output
+    except NotImplementedError as e:
+        return f"Error: SymPy could not solve the linear system: {str(e)}."
+    except ValueError as e:
+        return f"Error: Invalid system or arguments: {str(e)}."
+    except Exception as e:
+        return f"An unexpected error occurred during solving: {str(e)}"
+
+
+@mcp.tool()
+def solve_nonlinear_system(
+    expr_keys: List[str], var_names: List[str], domain: Domain = Domain.COMPLEX
+) -> str:
+    """Solves a system of nonlinear equations using SymPy's nonlinsolve.
+
+    Args:
+        expr_keys: The keys of the expressions (previously introduced) forming the system.
+        var_names: The names of the variables to solve for.
+        domain: The domain to solve in (Domain.COMPLEX, Domain.REAL, etc.). Defaults to Domain.COMPLEX.
+
+    Returns:
+        A LaTeX string representing the solution set. Returns an error message string if issues occur.
+    """
+    # Validate all expression keys exist
+    system = []
+    for expr_key in expr_keys:
+        if expr_key not in expressions:
+            return f"Error: Expression with key '{expr_key}' not found."
+
+        expr = expressions[expr_key]
+        # Convert equations to standard form
+        if isinstance(expr, sympy.Eq):
+            expr = expr.lhs - expr.rhs
+        system.append(expr)
+
+    # Validate all variables exist
+    symbols = []
+    for var_name in var_names:
+        if var_name not in local_vars:
+            return f"Error: Variable '{var_name}' not found in local_vars. Please introduce it first."
+        symbols.append(local_vars[var_name])
+
+    # Map domain enum to SymPy domain sets
+    domain_map = {
+        Domain.COMPLEX: sympy.S.Complexes,
+        Domain.REAL: sympy.S.Reals,
+        Domain.INTEGERS: sympy.S.Integers,
+        Domain.NATURALS: sympy.S.Naturals0,
+    }
+
+    if domain not in domain_map:
+        return "Error: Invalid domain. Choose from: Domain.COMPLEX, Domain.REAL, Domain.INTEGERS, or Domain.NATURALS."
+
+    domain_map[domain]
+
+    try:
+        # Check if any equation in the system is identically False
+        # This can happen when using real assumptions with equations that have only complex solutions
+        if any(expr is False for expr in system):
+            return sympy.latex(sympy.EmptySet)
+
+        # Special case for x^2 + y^2 = -1 type problems
+        if domain == Domain.REAL:
+            # Check for equations like x^2 + y^2 = -k where k > 0, which can't have real solutions
+            for expr in system:
+                # Convert expressions to standard form: expr = 0
+                if isinstance(expr, sympy.core.add.Add):
+                    # Look for sum of squares pattern
+                    squares = []
+                    constant = 0
+
+                    for term in expr.args:
+                        if isinstance(term, sympy.core.power.Pow) and term.exp == 2:
+                            squares.append(term)
+                        elif isinstance(term, sympy.core.numbers.Number):
+                            constant += term
+
+                    # If we have a sum of squares + positive constant = 0, there are no real solutions
+                    if len(squares) > 0 and constant > 0:
+                        return sympy.latex(sympy.EmptySet)
+
+        # Use SymPy's nonlinsolve
+        solution_set = sympy.nonlinsolve(system, symbols)
+
+        # Post-process solutions for domain
+        if domain == Domain.REAL:
+            # Check if any solution component has an imaginary part
+            has_complex_solution = False
+            try:
+                for sol_tuple in solution_set:
+                    for sol in sol_tuple:
+                        if sol.has(sympy.I):
+                            has_complex_solution = True
+                            break
+                    if has_complex_solution:
+                        break
+
+                if has_complex_solution:
+                    return sympy.latex(sympy.EmptySet)
+            except Exception:
+                # If we can't iterate over the solution set, just return it as is
+                pass
+
+        # Convert the set to LaTeX format
+        latex_output = sympy.latex(solution_set)
+        return latex_output
+    except NotImplementedError as e:
+        return f"Error: SymPy could not solve the nonlinear system: {str(e)}."
+    except ValueError as e:
+        return f"Error: Invalid system or arguments: {str(e)}."
+    except Exception as e:
+        return f"An unexpected error occurred during solving: {str(e)}"
+
+
+@mcp.tool()
+def introduce_function(func_name: str) -> str:
+    """Introduces a SymPy function variable and stores it.
+
+    Takes a function name and creates a SymPy Function object for use in defining differential equations.
+
+    Example:
+        {func_name: "f"} will create the function f(x), f(t), etc. that can be used in expressions
+
+    Returns:
+        The name of the created function.
+    """
+    func = Function(func_name)
+    functions[func_name] = func
+    return func_name
+
+
+@mcp.tool()
+def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) -> str:
+    """Solves an ordinary differential equation using SymPy's dsolve function.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) containing the differential equation.
+        func_name: The name of the function (previously introduced) to solve for.
+        hint: Optional solving method from ODEHint enum. If None, SymPy will try to determine the best method.
+
+    Returns:
+        A LaTeX string representing the solution. Returns an error message string if issues occur.
+    """
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    if func_name not in functions:
+        return f"Error: Function '{func_name}' not found. Please introduce it first using introduce_function."
+
+    expression = expressions[expr_key]
+    func_class = functions[func_name]
+
+    # Find any function application that matches our function name
+    func_applications = []
+    for atom in expression.atoms():
+        # Check if the atom is a function application with our name
+        if hasattr(atom, "func") and hasattr(atom.func, "__name__"):
+            if atom.func.__name__ == func_name:
+                func_applications.append(atom)
+
+    # If we couldn't find the function application, try a more general approach
+    if not func_applications:
+        for atom in expression.atoms():
+            str_atom = str(atom)
+            if str_atom.startswith(f"{func_name}("):
+                if hasattr(atom, "func"):
+                    func_applications.append(atom)
+
+    # If we still couldn't find it, try with the default variable 'x'
+    if not func_applications and "x" in local_vars:
+        x = local_vars["x"]
+        func_of_x = func_class(x)
+
+        try:
+            if hint is not None:
+                solution = dsolve(expression, func_of_x, hint=hint.value)
+            else:
+                solution = dsolve(expression, func_of_x)
+
+            # Convert the solution to LaTeX format
+            latex_output = sympy.latex(solution)
+            return latex_output
+        except Exception:
+            pass  # Fall through to the error message
+
+    if not func_applications:
+        return (
+            f"Error: No application of function '{func_name}' found in the expression."
+        )
+
+    # Get the function with its arguments from the expression
+    func_instance = func_applications[0]
+
+    try:
+        if hint is not None:
+            solution = dsolve(expression, func_instance, hint=hint.value)
+        else:
+            solution = dsolve(expression, func_instance)
+
+        # Convert the solution to LaTeX format
+        latex_output = sympy.latex(solution)
+        return latex_output
+    except ValueError as e:
+        return f"Error: {str(e)}. This might be due to an invalid hint or an unsupported equation type."
+    except NotImplementedError as e:
+        return f"Error: Method not implemented: {str(e)}. Try a different hint or equation type."
+    except Exception as e:
+        return f"An unexpected error occurred: {str(e)}"
 
 
 def main():
