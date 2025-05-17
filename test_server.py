@@ -9,6 +9,7 @@ from server import (
     solve_nonlinear_system,
     introduce_function,
     dsolve_ode,
+    pdsolve_pde,
     local_vars,
     expressions,
     functions,
@@ -341,3 +342,51 @@ class TestDsolveOdeTool:
         expr_key = introduce_expression("Derivative(f(x), x) - f(x)")
         result = dsolve_ode(expr_key, "g")
         assert "error" in result.lower()
+
+
+class TestPdsolvePdeTool:
+    def test_simple_pde(self):
+        # Introduce variables
+        intro("x", [Assumption.REAL], [])
+        intro("y", [Assumption.REAL], [])
+
+        # Introduce a function
+        introduce_function("f")
+
+        # Create a PDE: 1 + 2*(ux/u) + 3*(uy/u) = 0
+        # where u = f(x, y), ux = u.diff(x), uy = u.diff(y)
+        expr_key = introduce_expression(
+            "Eq(1 + 2*Derivative(f(x, y), x)/f(x, y) + 3*Derivative(f(x, y), y)/f(x, y), 0)"
+        )
+
+        # Solve the PDE
+        result = pdsolve_pde(expr_key, "f")
+
+        # Solution should include e^ (LaTeX for exponential) and arbitrary function F
+        assert "e^" in result
+        assert "F" in result
+
+    def test_nonexistent_expression(self):
+        introduce_function("f")
+        result = pdsolve_pde("nonexistent_key", "f")
+        assert "error" in result.lower()
+
+    def test_nonexistent_function(self):
+        intro("x", [Assumption.REAL], [])
+        intro("y", [Assumption.REAL], [])
+        introduce_function("f")
+        expr_key = introduce_expression(
+            "Derivative(f(x, y), x) + Derivative(f(x, y), y)"
+        )
+        result = pdsolve_pde(expr_key, "g")
+        assert "error" in result.lower()
+
+    def test_no_function_application(self):
+        # Test with an expression that doesn't contain the function
+        intro("x", [Assumption.REAL], [])
+        intro("y", [Assumption.REAL], [])
+        introduce_function("f")
+        expr_key = introduce_expression("x + y")
+        result = pdsolve_pde(expr_key, "f")
+        assert "error" in result.lower()
+        assert "function cannot be automatically detected" in result.lower()

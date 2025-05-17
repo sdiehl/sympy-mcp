@@ -11,6 +11,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
 from vars import Assumption, Domain, ODEHint
 from sympy import Eq, Function, dsolve
+from sympy.solvers.pde import pdsolve
 
 logger = logging.getLogger(__name__)
 
@@ -456,54 +457,19 @@ def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) ->
         return f"Error: Function '{func_name}' not found. Please introduce it first using introduce_function."
 
     expression = expressions[expr_key]
-    func_class = functions[func_name]
-
-    # Find any function application that matches our function name
-    func_applications = []
-    for atom in expression.atoms():
-        # Check if the atom is a function application with our name
-        if hasattr(atom, "func") and hasattr(atom.func, "__name__"):
-            if atom.func.__name__ == func_name:
-                func_applications.append(atom)
-
-    # If we couldn't find the function application, try a more general approach
-    if not func_applications:
-        for atom in expression.atoms():
-            str_atom = str(atom)
-            if str_atom.startswith(f"{func_name}("):
-                if hasattr(atom, "func"):
-                    func_applications.append(atom)
-
-    # If we still couldn't find it, try with the default variable 'x'
-    if not func_applications and "x" in local_vars:
-        x = local_vars["x"]
-        func_of_x = func_class(x)
-
-        try:
-            if hint is not None:
-                solution = dsolve(expression, func_of_x, hint=hint.value)
-            else:
-                solution = dsolve(expression, func_of_x)
-
-            # Convert the solution to LaTeX format
-            latex_output = sympy.latex(solution)
-            return latex_output
-        except Exception:
-            pass  # Fall through to the error message
-
-    if not func_applications:
-        return (
-            f"Error: No application of function '{func_name}' found in the expression."
-        )
-
-    # Get the function with its arguments from the expression
-    func_instance = func_applications[0]
 
     try:
-        if hint is not None:
-            solution = dsolve(expression, func_instance, hint=hint.value)
+        # Convert to equation form if it's not already
+        if isinstance(expression, sympy.Eq):
+            eq = expression
         else:
-            solution = dsolve(expression, func_instance)
+            eq = sympy.Eq(expression, 0)
+
+        # Let SymPy handle function detection and apply the specified hint if provided
+        if hint is not None:
+            solution = dsolve(eq, hint=hint.value)
+        else:
+            solution = dsolve(eq)
 
         # Convert the solution to LaTeX format
         latex_output = sympy.latex(solution)
@@ -512,6 +478,49 @@ def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) ->
         return f"Error: {str(e)}. This might be due to an invalid hint or an unsupported equation type."
     except NotImplementedError as e:
         return f"Error: Method not implemented: {str(e)}. Try a different hint or equation type."
+    except Exception as e:
+        return f"An unexpected error occurred: {str(e)}"
+
+
+@mcp.tool()
+def pdsolve_pde(expr_key: str, func_name: str) -> str:
+    """Solves a partial differential equation using SymPy's pdsolve function.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) containing the PDE.
+                 If the expression is not an equation (Eq), it will be interpreted as
+                 PDE = 0.
+        func_name: The name of the function (previously introduced) to solve for.
+                   This should be a function of multiple variables.
+
+    Returns:
+        A LaTeX string representing the solution. Returns an error message string if issues occur.
+    """
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    if func_name not in functions:
+        return f"Error: Function '{func_name}' not found. Please introduce it first using introduce_function."
+
+    expression = expressions[expr_key]
+
+    try:
+        # Handle both equation and non-equation expressions
+        if isinstance(expression, sympy.Eq):
+            eq = expression
+        else:
+            eq = sympy.Eq(expression, 0)
+
+        # Let SymPy's pdsolve find the dependent variable itself
+        solution = pdsolve(eq)
+
+        # Convert the solution to LaTeX format
+        latex_output = sympy.latex(solution)
+        return latex_output
+    except ValueError as e:
+        return f"Error: {str(e)}. This might be due to an unsupported equation type."
+    except NotImplementedError as e:
+        return f"Error: Method not implemented: {str(e)}. The PDE might not be solvable using the implemented methods."
     except Exception as e:
         return f"An unexpected error occurred: {str(e)}"
 
