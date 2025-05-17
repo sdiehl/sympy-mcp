@@ -105,8 +105,40 @@ class ODEHint(Enum):
         "2nd_nonlinear_autonomous_conserved_Integral"
     )
 
+
 class PDEHint(Enum):
     FIRST_LINEAR_CONSTANT_COEFF_HOMOGENEOUS = "1st_linear_constant_coeff_homogeneous"
     FIRST_LINEAR_CONSTANT_COEFF = "1st_linear_constant_coeff"
     FIRST_LINEAR_CONSTANT_COEFF_INTEGRAL = "1st_linear_constant_coeff_Integral"
     FIRST_LINEAR_VARIABLE_COEFF = "1st_linear_variable_coeff"
+
+
+class Metric(Enum):
+    ALCUBIERRE_WARP = "AlcubierreWarp"
+    BARRIOLA_VILEKIN = "BarriolaVilekin"
+    BERTOTTI_KASNER = "BertottiKasner"
+    BESSEL_GRAVITATIONAL_WAVE = "BesselGravitationalWave"
+    C_METRIC = "CMetric"
+    DAVIDSON = "Davidson"
+    ANTI_DE_SITTER = "AntiDeSitter"
+    ANTI_DE_SITTER_STATIC = "AntiDeSitterStatic"
+    DE_SITTER = "DeSitter"
+    ERNST = "Ernst"
+    GODEL = "Godel"
+    JANIS_NEWMAN_WINICOUR = "JanisNewmanWinicour"
+    MINKOWSKI = "Minkowski"
+    MINKOWSKI_CARTESIAN = "MinkowskiCartesian"
+    MINKOWSKI_POLAR = "MinkowskiPolar"
+    KERR = "Kerr"
+    KERR_NEWMAN = "KerrNewman"
+    REISSNER_NORDSTROM = "ReissnerNordstorm"
+    SCHWARZSCHILD = "Schwarzschild"
+
+
+class Tensor(Enum):
+    RICCI_SCALAR = "RicciScalar"
+    RICCI_TENSOR = "RicciTensor"
+    RIEMANN_CURVATURE_TENSOR = "RiemannCurvatureTensor"
+    SCHOUTEN_TENSOR = "SchoutenTensor"
+    STRESS_ENERGY_MOMENTUM_TENSOR = "StressEnergyMomentumTensor"
+    WEYL_TENSOR = "WeylTensor"

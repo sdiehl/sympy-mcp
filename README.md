@@ -4,7 +4,9 @@ This is Model Context Protocol server that exposes stateful symbolic manipulatio
 
 ## Why?
 
-Language models absolutely *absolutely abysmal* at symbolic manipulation. They randomly drop variables, make up random constants, permute variables and generally make a mess. But we have awesome tools for symbolic manipulation, so we can use tool-calling to call out to to give them the ability to manipulate sequences of expressions.
+Language models absolutely *absolutely abysmal* at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the CAS does all the heavy lifting.
+
+While you can totally have an LLM generate Mathematica or Python code, if you want to use the LLM as on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
 
 ## Usage
 

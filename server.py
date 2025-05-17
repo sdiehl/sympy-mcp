@@ -13,10 +13,20 @@ from vars import Assumption, Domain, ODEHint, PDEHint
 from sympy import Eq, Function, dsolve
 from sympy.solvers.pde import pdsolve
 
+try:
+    from einsteinpy.symbolic import RicciTensor, RicciScalar
+    from einsteinpy.symbolic.predefined import AntiDeSitter
+except ImportError:
+    pass
+
 logger = logging.getLogger(__name__)
 
 # Create an MCP server
-mcp = FastMCP("sympy-mcp", dependencies=["sympy", "pydantic"])
+mcp = FastMCP(
+    "sympy-mcp",
+    dependencies=["sympy", "pydantic"],
+    instructions="Provides access to the Sympy computer algebra system, which can perform symbolic manipulation of mathematical expressions.",
+)
 
 # Global store for sympy variables and expressions
 local_vars: Dict[str, sympy.Symbol] = {}
@@ -405,10 +415,10 @@ def dsolve_ode(expr_key: str, func_name: str, hint: Optional[ODEHint] = None) ->
         # First introduce a variable and a function
         intro("x", [Assumption.REAL], [])
         introduce_function("f")
-        
+
         # Create a second-order ODE: f''(x) + 9*f(x) = 0
         expr_key = introduce_expression("Derivative(f(x), x, x) + 9*f(x)")
-        
+
         # Solve the ODE
         result = dsolve_ode(expr_key, "f")
         # Returns solution with sin(3*x) and cos(3*x) terms
@@ -464,12 +474,12 @@ def pdsolve_pde(expr_key: str, func_name: str, hint: Optional[PDEHint] = None) -
         intro("x", [Assumption.REAL], [])
         intro("y", [Assumption.REAL], [])
         introduce_function("f")
-        
+
         # Create a PDE: 1 + 2*(ux/u) + 3*(uy/u) = 0
         expr_key = introduce_expression(
             "Eq(1 + 2*Derivative(f(x, y), x)/f(x, y) + 3*Derivative(f(x, y), y)/f(x, y), 0)"
         )
-        
+
         # Solve the PDE
         result = pdsolve_pde(expr_key, "f")
         # Returns solution with exponential terms and arbitrary function
