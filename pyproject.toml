@@ -1,0 +1,10 @@
+[project]
+name = "sympy-mcp"
+version = "0.1.0"
+description = "A MCP server for symbolic manipulation of mathematical expressions"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mcp[cli]>=1.9.0",
+    "sympy>=1.14.0",
+]
