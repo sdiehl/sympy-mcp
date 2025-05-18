@@ -173,7 +173,7 @@ Replace `/ABSOLUTE_PATH_TO/server.py` with the actual path to your sympy-mcp ser
 
 ## Running in Container
 
-You can also run the server using Docker:
+You can build and run the server using Docker locally:
 
 ```bash
 # Build the Docker image
@@ -181,6 +181,16 @@ docker build -t sympy-mcp .
 
 # Run the Docker container
 docker run -p 8081:8081 sympy-mcp
+```
+
+Alternatively, you can pull the pre-built image from GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/sdiehl/sympy-mcp:latest
+
+# Run the container
+docker run -p 8081:8081 --rm ghcr.io/sdiehl/sympy-mcp:latest
 ```
 
 To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file:
@@ -192,10 +202,31 @@ To configure Claude Desktop to launch the Docker container, edit your `claude_de
       "command": "docker",
       "args": [
         "run",
-        "--rm",
+        "-i",
         "-p",
         "8081:8081",
+        "--rm",
         "sympy-mcp"
+      ]
+    }
+  }
+}
+```
+
+Or to use the pre-built container from GitHub:
+
+```json
+{
+  "mcpServers": {
+    "sympy-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "-p",
+        "8081:8081",
+        "--rm",
+        "ghcr.io/sdiehl/sympy-mcp:latest"
       ]
     }
   }
