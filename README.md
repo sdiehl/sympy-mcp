@@ -4,7 +4,7 @@
 
 # Symbolic Algebra MCP Server
 
-This is Model Context Protocol server that exposes stateful symbolic manipulation tools to a LLM. So it can manipulate mathematical expressions and equations.
+Sympy-MCP is a Model Context Protocol server for allowing LLMs to autonomously perform symbolic mathematics and computer algebra. It exposes numerous tools from SymPy's core functionality to MCP clients for manipulating mathematical expressions and equations.
 
 ## Why?
 
@@ -118,7 +118,7 @@ Add the following to the `mcpServers` object, replacing `/ABSOLUTE_PATH_TO_SYMPY
 
 ## Cursor Installation
 
-In your ~/.cursor/mcp.json, add the following, where `ABSOLUTE_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
+In your `~/.cursor/mcp.json`, add the following, where `ABSOLUTE_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
 
 ```json
 {
@@ -177,7 +177,7 @@ docker build -t sympy-mcp .
 docker run -p 8081:8081 sympy-mcp
 ```
 
-To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file (usually located at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file:
 
 ```json
 {
