@@ -16,6 +16,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 
 # Copy application code
 COPY pyproject.toml .
+COPY vars.py .
 COPY server.py .
 
 # Expose the default MCP port

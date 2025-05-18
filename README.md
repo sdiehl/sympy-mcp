@@ -8,7 +8,7 @@ This is Model Context Protocol server that exposes stateful symbolic manipulatio
 
 ## Why?
 
-Language models are *absolutely abysmal* at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the CAS does all the heavy lifting.
+Language models are absolutely abysmal at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the symbolic kernel do all the heavy lifting.
 
 While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
 
@@ -66,29 +66,6 @@ docker build -t sympy-mcp .
 docker run -p 8081:8081 sympy-mcp
 ```
 
-### Claude Desktop Configuration
-
-To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file (usually located at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
-
-```json
-{
-  "mcpServers": {
-    "sympy-mcp": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-p",
-        "8081:8081",
-        "sympy-mcp"
-      ]
-    }
-  }
-}
-```
-
-This configuration tells Claude Desktop to launch the Docker container when needed. Make sure to build the Docker image (`docker build -t sympy-mcp .`) before using Claude Desktop with this configuration.
-
 ## Cursor Installation
 
 In your ~/.cursor/mcp.json, add the following, where `REPLACE_WITH_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
@@ -117,7 +94,7 @@ In your ~/.cursor/mcp.json, add the following, where `REPLACE_WITH_PATH_TO_SYMPY
 }
 ```
 
-## Cline Integration
+## Cline Installation
 
 To use with [Cline](https://cline.bot/), you need to manually run the MCP server first using the commands in the "Usage" section. Once the MCP server is running, open Cline and select "MCP Servers" at the top.
 
@@ -126,15 +103,42 @@ Then select "Remote Servers" and add the following:
 - Server Name: sympy-mcp
 - Server URL: http://127.0.0.1:8081/sse
 
-## 5ire Integration
+## 5ire Installation
 
-To set up with 5ire, open [5ire](https://github.com/nanbingxyz/5ire) and go to Tools -> New and set the following configurations:
+Another MCP client that supports multiple models (o3, o4-mini, DeepSeek-R1, etc.) on the backend is 5ire.
+
+To set up with [5ire](https://github.com/nanbingxyz/5ire), open 5ire and go to Tools -> New and set the following configurations:
 
 - Tool Key: sympy-mcp
 - Name: SymPy MCP
 - Command: /opt/homebrew/bin/uv run --with einsteinpy --with mcp[cli] --with pydantic --with sympy mcp run /ABSOLUTE_PATH_TO/server.py
 
 Replace `/ABSOLUTE_PATH_TO/server.py` with the actual path to your sympy-mcp server.py file.
+
+## Running in Container
+
+To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file (usually located at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "sympy-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-p",
+        "8081:8081",
+        "sympy-mcp"
+      ]
+    }
+  }
+}
+```
+
+This configuration tells Claude Desktop to launch the Docker container when needed. Make sure to build the Docker image (`docker build -t sympy-mcp .`) before using Claude Desktop with this configuration.
+
+The other installation methods can also be adapted to work with Docker if you change the uv command to use the docker run command instead.
 
 ## Security Disclaimer
 
