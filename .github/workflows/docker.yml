@@ -30,4 +30,4 @@ jobs:
     - name: Test Docker image
       run: |
         docker images
-        docker run --rm sympy-mcp:latest uv run --with sympy -c "import sympy; print(f'SymPy version: {sympy.__version__}')" 
+        docker run --rm sympy-mcp:latest uv run --with sympy python -c "import sympy; print(f'SymPy version: {sympy.__version__}')" 

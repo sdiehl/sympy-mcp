@@ -27,7 +27,7 @@ jobs:
       run: |
         uv venv
         . .venv/bin/activate
-        uv sync --group dev
+        uv sync --group dev relativity
         
     - name: Lint with Ruff
       run: |
