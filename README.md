@@ -62,6 +62,12 @@ For development, you can run the server in watch mode:
 uv run mcp dev server.py
 ```
 
+If you want a completely standalone version that just runs with a single command, you can use the following: **Note this is pulling arbitrary code from Github, so be careful.**
+
+```bash
+uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
+```
+
 ## Usage with Claude Desktop
 
 Normally the `mcp install` command will automatically add the server to the `claude_desktop_config.json` file. If it doesn't you need to find the config file and add the following:
