@@ -24,29 +24,29 @@ $$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
 
 The sympy-mcp server provides the following tools for symbolic mathematics:
 
-- **intro** - Introduces a variable with specified assumptions and stores it
-- **intro_many** - Introduces multiple variables with specified assumptions simultaneously
-- **introduce_expression** - Parses an expression string using available local variables and stores it
-- **print_latex_expression** - Prints a stored expression in LaTeX format, along with variable assumptions
-- **solve_algebraically** - Solves an equation algebraically for a given variable
-- **solve_linear_system** - Solves a system of linear equations
-- **solve_nonlinear_system** - Solves a system of nonlinear equations
-- **introduce_function** - Introduces a function variable for use in differential equations
-- **dsolve_ode** - Solves an ordinary differential equation
-- **pdsolve_pde** - Solves a partial differential equation
-- **create_predefined_metric** - Creates a predefined spacetime metric (e.g. Schwarzschild, Kerr, Minkowski)
-- **search_predefined_metrics** - Searches available predefined metrics
-- **calculate_tensor** - Calculates tensors from a metric (Ricci, Einstein, Weyl tensors)
-- **create_custom_metric** - Creates a custom metric tensor from provided components and symbols
-- **print_latex_tensor** - Prints a stored tensor expression in LaTeX format
-- **simplify_expression** - Simplifies a mathematical expression
-- **integrate_expression** - Integrates an expression with respect to a variable
-- **differentiate_expression** - Differentiates an expression with respect to a variable
-- **create_coordinate_system** - Creates a 3D coordinate system for vector calculus operations
-- **create_vector_field** - Creates a vector field in the specified coordinate system
-- **calculate_curl** - Calculates the curl of a vector field
-- **calculate_divergence** - Calculates the divergence of a vector field
-- **calculate_gradient** - Calculates the gradient of a scalar field
+- (Variable Introduction) **intro** - Introduces a variable with specified assumptions and stores it
+- (Multiple Variable Introduction) **intro_many** - Introduces multiple variables with specified assumptions simultaneously
+- (Expression Parser) **introduce_expression** - Parses an expression string using available local variables and stores it
+- (LaTeX Printer) **print_latex_expression** - Prints a stored expression in LaTeX format, along with variable assumptions
+- (Solver Algebraic/Transcendental Equation) **solve_algebraically** - Solves an equation algebraically for a given variable
+- (Linear System Solver) **solve_linear_system** - Solves a system of linear equations
+- (Nonlinear System Solver) **solve_nonlinear_system** - Solves a system of nonlinear equations
+- (Function Variable Introduction) **introduce_function** - Introduces a function variable for use in differential equations
+- (Solve Ordinary Differential Equation) **dsolve_ode** - Solves an ordinary differential equation
+- (Solve Partial Differential Equation) **pdsolve_pde** - Solves a partial differential equation
+- (Create Standard Spacetime Metric) **create_predefined_metric** - Creates a predefined spacetime metric (e.g. Schwarzschild, Kerr, Minkowski)
+- (Metric Search) **search_predefined_metrics** - Searches available predefined metrics
+- (Tensor Calculator) **calculate_tensor** - Calculates tensors from a metric (Ricci, Einstein, Weyl tensors)
+- (Create Custom Spacetime Metric) **create_custom_metric** - Creates a custom metric tensor from provided components and symbols
+- (Tensor LaTeX Printer) **print_latex_tensor** - Prints a stored tensor expression in LaTeX format
+- (Expression Simplifier) **simplify_expression** - Simplifies a mathematical expression
+- (Integration Calculator) **integrate_expression** - Integrates an expression with respect to a variable
+- (Differentiation Calculator) **differentiate_expression** - Differentiates an expression with respect to a variable
+- (Coordinate System Creator) **create_coordinate_system** - Creates a 3D coordinate system for vector calculus operations
+- (Vector Field Creator) **create_vector_field** - Creates a vector field in the specified coordinate system
+- (Curl Calculator) **calculate_curl** - Calculates the curl of a vector field
+- (Divergence Calculator) **calculate_divergence** - Calculates the divergence of a vector field
+- (Gradient Calculator) **calculate_gradient** - Calculates the gradient of a scalar field
 
 ## Usage
 
@@ -62,7 +62,7 @@ For development, you can run the server in watch mode:
 uv run mcp dev server.py
 ```
 
-If you want a completely standalone version that just runs with a single command, you can use the following: **Note this is pulling arbitrary code from Github, so be careful.**
+If you want a completely standalone version that just runs with a single command, you can use the following: *Note this is pulling arbitrary code from Github, so be careful.*
 
 ```bash
 uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
@@ -103,7 +103,7 @@ Add the following to the `mcpServers` object, replacing `/ABSOLUTE_PATH_TO_SYMPY
 
 ## Cursor Installation
 
-In your ~/.cursor/mcp.json, add the following, where `REPLACE_WITH_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
+In your ~/.cursor/mcp.json, add the following, where `ABSOLUTE_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
 
 ```json
 {
@@ -122,7 +122,7 @@ In your ~/.cursor/mcp.json, add the following, where `REPLACE_WITH_PATH_TO_SYMPY
         "sympy",
         "mcp",
         "run",
-        "REPLACE_WITH_PATH_TO_SYMPY_MCP/server.py"
+        "/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py"
       ]
     }
   }
