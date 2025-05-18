@@ -239,6 +239,7 @@ Result: $c \frac{d}{d t} x{\left(t \right)} + k x{\left(t \right)} + m \frac{d^{
 ```
 
 Result:
+
 $$
-x{\left(t \right)} = C_{1} e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + C_{2} e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + \frac{e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} \int F{\left(t \right)} e^{\frac{c t}{2 m}} e^{- \frac{t \sqrt{c^{2} - 4 k m}}{2 m}}\, dt}{\sqrt{c^{2} - 4 k m}} - \frac{e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} \int F{\left(t \right)} e^{\frac{c t}{2 m}} e^{\frac{t \sqrt{c^{2} - 4 k m}}{2 m}}\, dt}{\sqrt{c^{2} - 4 k m}}
+x{\left(t \right)} = C_{1} e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + C_{2} e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + \cdots
 $$
