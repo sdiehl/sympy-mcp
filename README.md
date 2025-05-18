@@ -54,16 +54,37 @@ For development, you can run the server in watch mode:
 uv run mcp dev server.py
 ```
 
-## Docker Usage
+## Usage with Claude Desktop
 
-You can also run the server using Docker:
+Normally the `mcp install` command will automatically add the server to the `claude_desktop_config.json` file. If it doesn't you need to find the config file and add the following:
 
-```bash
-# Build the Docker image
-docker build -t sympy-mcp .
+* macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+* Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-# Run the Docker container
-docker run -p 8081:8081 sympy-mcp
+Add the following to the `mcpServers` object, replacing `/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py` with the absolute path to the sympy-mcp `server.py` file.
+
+```json
+{
+  "mcpServers": {
+    "sympy-mcp": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": [
+        "run",
+        "--with",
+        "einsteinpy",
+        "--with",
+        "mcp[cli]",
+        "--with",
+        "pydantic",
+        "--with",
+        "sympy",
+        "mcp",
+        "run",
+        "/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py"
+      ]
+    }
+  }
+}
 ```
 
 ## Cursor Installation
@@ -100,8 +121,8 @@ To use with [Cline](https://cline.bot/), you need to manually run the MCP server
 
 Then select "Remote Servers" and add the following:
 
-- Server Name: sympy-mcp
-- Server URL: http://127.0.0.1:8081/sse
+- Server Name: `sympy-mcp`
+- Server URL: `http://127.0.0.1:8081/sse`
 
 ## 5ire Installation
 
@@ -109,13 +130,23 @@ Another MCP client that supports multiple models (o3, o4-mini, DeepSeek-R1, etc.
 
 To set up with [5ire](https://github.com/nanbingxyz/5ire), open 5ire and go to Tools -> New and set the following configurations:
 
-- Tool Key: sympy-mcp
+- Tool Key: `sympy-mcp`
 - Name: SymPy MCP
-- Command: /opt/homebrew/bin/uv run --with einsteinpy --with mcp[cli] --with pydantic --with sympy mcp run /ABSOLUTE_PATH_TO/server.py
+- Command: `/opt/homebrew/bin/uv run --with einsteinpy --with mcp[cli] --with pydantic --with sympy mcp run /ABSOLUTE_PATH_TO/server.py`
 
 Replace `/ABSOLUTE_PATH_TO/server.py` with the actual path to your sympy-mcp server.py file.
 
 ## Running in Container
+
+You can also run the server using Docker:
+
+```bash
+# Build the Docker image
+docker build -t sympy-mcp .
+
+# Run the Docker container
+docker run -p 8081:8081 sympy-mcp
+```
 
 To configure Claude Desktop to launch the Docker container, edit your `claude_desktop_config.json` file (usually located at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
