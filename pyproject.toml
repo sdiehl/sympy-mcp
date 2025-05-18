@@ -9,6 +9,13 @@ dependencies = [
     "sympy>=1.14.0",
 ]
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server", "vars"]
+
 [dependency-groups]
 dev = [
     "black>=25.1.0",
