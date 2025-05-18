@@ -28,7 +28,7 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 - **Multiple Variable Introduction** (*intro_many*) - Introduces multiple variables with specified assumptions simultaneously
 - **Expression Parser** (*introduce_expression*) - Parses an expression string using available local variables and stores it
 - **LaTeX Printer** (*print_latex_expression*) - Prints a stored expression in LaTeX format, along with variable assumptions
-- **Solver Algebraic/Transcendental Equation** (*solve_algebraically*) - Solves an equation algebraically for a given variable
+- **Solver Algebraic/Transcendental Equation** (*solve_algebraically*) - Solves an equation algebraically for a given variable over a given domain
 - **Linear System Solver** (*solve_linear_system*) - Solves a system of linear equations
 - **Nonlinear System Solver** (*solve_nonlinear_system*) - Solves a system of nonlinear equations
 - **Function Variable Introduction** (*introduce_function*) - Introduces a function variable for use in differential equations
@@ -50,27 +50,35 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 
 ## Usage
 
-You need uv (`brew install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`) first.
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
+
+- **Homebrew** - `brew install uv`
+- **Curl** - `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 Then you can install and run the server with the following commands:
 
-```bash
+```shell
+# Setup the project
 git clone https://github.com/sdiehl/sympy-mcp.git
 cd sympy-mcp
 uv sync
+
+# Install the server to Claude Desktop
 uv run mcp install server.py
+
+# Run the server
 uv run mcp run server.py
 ```
 
 For development, you can run the server in watch mode:
 
-```bash
+```shell
 uv run mcp dev server.py
 ```
 
 If you want a completely standalone version that just runs with a single command, you can use the following: *Note this is pulling arbitrary code from Github, so be careful.*
 
-```bash
+```shell
 uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
 ```
 
