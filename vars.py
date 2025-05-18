@@ -142,3 +142,11 @@ class Tensor(Enum):
     SCHOUTEN_TENSOR = "SchoutenTensor"
     STRESS_ENERGY_MOMENTUM_TENSOR = "StressEnergyMomentumTensor"
     WEYL_TENSOR = "WeylTensor"
+    EINSTEIN_TENSOR = "EinsteinTensor"
+
+
+class UnitSystem(Enum):
+    MKS = "MKS"
+    MKSA = "MKSA"
+    NATURAL = "natural"
+    SI = "SI"
