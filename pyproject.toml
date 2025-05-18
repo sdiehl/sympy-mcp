@@ -21,3 +21,7 @@ relativity = [
 
 [tool.uv]
 default-groups = []
+
+[tool.pytest]
+testpaths = ["tests"]
+python_files = "test_*.py"
