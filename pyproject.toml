@@ -3,6 +3,7 @@ name = "sympy-mcp"
 version = "0.1.0"
 description = "A MCP server for symbolic manipulation of mathematical expressions"
 readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.12"
 dependencies = [
     "mcp[cli]>=1.9.0",

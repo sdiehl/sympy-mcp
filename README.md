@@ -250,7 +250,12 @@ $$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
   "expr_key": "expr_12"
 }
 ```
-Result: $c \frac{d}{d t} x{\left(t \right)} + k x{\left(t \right)} + m \frac{d^{2}}{d t^{2}} x{\left(t \right)} = F{\left(t \right)}$
+
+Result:
+
+$$
+c \frac{d}{d t} x{\left(t \right)} + k x{\left(t \right)} + m \frac{d^{2}}{d t^{2}} x{\left(t \right)} = F{\left(t \right)}
+$$
 
 **Assistant**: (Internal tool call) `introduce_function` to define F(t):
 ```json
