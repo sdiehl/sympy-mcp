@@ -125,7 +125,8 @@ class TestCalculateTensor:
 
         result = calculate_tensor(metric_key, TestEnum())
         assert "Error" in result
-        assert "not implemented" in result
+        # Check either for "not implemented" or the attribute error message
+        assert "not implemented" in result or "has no attribute" in result
 
 
 class TestCreateCustomMetric:

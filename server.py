@@ -10,8 +10,9 @@ from pydantic import BaseModel
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
 from vars import Assumption, Domain, ODEHint, PDEHint, Metric, Tensor
-from sympy import Eq, Function, dsolve
+from sympy import Eq, Function, dsolve, diff, integrate, simplify
 from sympy.solvers.pde import pdsolve
+from sympy.vector import CoordSys3D, curl, divergence, gradient
 
 try:
     from einsteinpy.symbolic import (
@@ -54,6 +55,7 @@ functions: Dict[str, sympy.Function] = {}
 expressions: Dict[str, sympy.Expr] = {}
 metrics: Dict[str, Any] = {}
 tensor_objects: Dict[str, Any] = {}
+coordinate_systems: Dict[str, CoordSys3D] = {}
 expression_counter = 0
 
 
@@ -561,29 +563,36 @@ if EINSTEINPY_AVAILABLE:
             A key for the stored metric object.
         """
         try:
-            # First try direct mapping to enum value
-            metric_enum = None
+            # Handle if metric_name is actually a Metric enum already
+            if isinstance(metric_name, Metric):
+                metric_enum = metric_name
+            else:
+                # First try direct mapping to enum value
+                metric_enum = None
 
-            # Try to match by enum value (the string in the enum definition)
-            for metric in Metric:
-                if metric.value.lower() == metric_name.lower():
-                    metric_enum = metric
-                    break
+                # Try to match by enum value (the string in the enum definition)
+                for metric in Metric:
+                    if metric.value.lower() == metric_name.lower():
+                        metric_enum = metric
+                        break
 
-            # If it didn't match any enum value, try to match by enum name
-            if metric_enum is None:
-                try:
-                    # Try exact name match
-                    metric_enum = Metric[metric_name.upper()]
-                except KeyError:
-                    # Try normalized name (remove spaces, underscores, etc.)
-                    normalized_name = "".join(
-                        c.upper() for c in metric_name if c.isalnum()
-                    )
-                    for m in Metric:
-                        if "".join(c for c in m.name if c.isalnum()) == normalized_name:
-                            metric_enum = m
-                            break
+                # If it didn't match any enum value, try to match by enum name
+                if metric_enum is None:
+                    try:
+                        # Try exact name match
+                        metric_enum = Metric[metric_name.upper()]
+                    except KeyError:
+                        # Try normalized name (remove spaces, underscores, etc.)
+                        normalized_name = "".join(
+                            c.upper() for c in metric_name if c.isalnum()
+                        )
+                        for m in Metric:
+                            if (
+                                "".join(c for c in m.name if c.isalnum())
+                                == normalized_name
+                            ):
+                                metric_enum = m
+                                break
 
             if metric_enum is None:
                 return f"Error: Invalid metric name '{metric_name}'. Available metrics are: {', '.join(m.value for m in Metric)}"
@@ -654,11 +663,15 @@ if EINSTEINPY_AVAILABLE:
         # Convert string to Tensor enum
         tensor_enum = None
         try:
-            # Try to match by enum value
-            for tensor in Tensor:
-                if tensor.value.lower() == tensor_type.lower():
-                    tensor_enum = tensor
-                    break
+            # Handle if tensor_type is already a Tensor enum
+            if isinstance(tensor_type, Tensor):
+                tensor_enum = tensor_type
+            else:
+                # Try to match by enum value
+                for tensor in Tensor:
+                    if tensor.value.lower() == tensor_type.lower():
+                        tensor_enum = tensor
+                        break
 
             # If it didn't match any enum value, try to match by enum name
             if tensor_enum is None:
@@ -821,6 +834,400 @@ else:
     def print_latex_tensor(tensor_key: str) -> str:
         """Prints a stored tensor expression in LaTeX format."""
         return "Error: EinsteinPy library is not available. Please install it with 'pip install einsteinpy'."
+
+
+@mcp.tool()
+def simplify_expression(expr_key: str) -> str:
+    """Simplifies a mathematical expression using SymPy's simplify function.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) to simplify.
+
+    Example:
+        # Introduce variables
+        intro("x", [Assumption.REAL], [])
+        intro("y", [Assumption.REAL], [])
+
+        # Create an expression to simplify: sin(x)^2 + cos(x)^2
+        expr_key = introduce_expression("sin(x)**2 + cos(x)**2")
+
+        # Simplify the expression
+        simplified = simplify_expression(expr_key)
+        # Returns 1
+
+    Returns:
+        A key for the simplified expression.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    try:
+        original_expr = expressions[expr_key]
+        simplified_expr = simplify(original_expr)
+
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = simplified_expr
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error during simplification: {str(e)}"
+
+
+@mcp.tool()
+def integrate_expression(
+    expr_key: str,
+    var_name: str,
+    lower_bound: Optional[str] = None,
+    upper_bound: Optional[str] = None,
+) -> str:
+    """Integrates an expression with respect to a variable using SymPy's integrate function.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) to integrate.
+        var_name: The name of the variable to integrate with respect to.
+        lower_bound: Optional lower bound for definite integration.
+        upper_bound: Optional upper bound for definite integration.
+
+    Example:
+        # Introduce a variable
+        intro("x", [Assumption.REAL], [])
+
+        # Create an expression to integrate: x^2
+        expr_key = introduce_expression("x**2")
+
+        # Indefinite integration
+        indefinite_result = integrate_expression(expr_key, "x")
+        # Returns x³/3
+
+        # Definite integration from 0 to 1
+        definite_result = integrate_expression(expr_key, "x", "0", "1")
+        # Returns 1/3
+
+    Returns:
+        A key for the integrated expression.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    if var_name not in local_vars:
+        return f"Error: Variable '{var_name}' not found. Please introduce it first."
+
+    try:
+        expr = expressions[expr_key]
+        var = local_vars[var_name]
+
+        # Parse bounds if provided
+        bounds = None
+        if lower_bound is not None and upper_bound is not None:
+            parse_dict = {**local_vars, **functions}
+            lower = parse_expr(lower_bound, local_dict=parse_dict)
+            upper = parse_expr(upper_bound, local_dict=parse_dict)
+            bounds = (var, lower, upper)
+
+        # Perform integration
+        if bounds:
+            result = integrate(expr, bounds)
+        else:
+            result = integrate(expr, var)
+
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error during integration: {str(e)}"
+
+
+@mcp.tool()
+def differentiate_expression(expr_key: str, var_name: str, order: int = 1) -> str:
+    """Differentiates an expression with respect to a variable using SymPy's diff function.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) to differentiate.
+        var_name: The name of the variable to differentiate with respect to.
+        order: The order of differentiation (default is 1 for first derivative).
+
+    Example:
+        # Introduce a variable
+        intro("x", [Assumption.REAL], [])
+
+        # Create an expression to differentiate: x^3
+        expr_key = introduce_expression("x**3")
+
+        # First derivative
+        first_deriv = differentiate_expression(expr_key, "x")
+        # Returns 3x²
+
+        # Second derivative
+        second_deriv = differentiate_expression(expr_key, "x", 2)
+        # Returns 6x
+
+    Returns:
+        A key for the differentiated expression.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    if var_name not in local_vars:
+        return f"Error: Variable '{var_name}' not found. Please introduce it first."
+
+    if order < 1:
+        return "Error: Order of differentiation must be at least 1."
+
+    try:
+        expr = expressions[expr_key]
+        var = local_vars[var_name]
+
+        result = diff(expr, var, order)
+
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error during differentiation: {str(e)}"
+
+
+@mcp.tool()
+def create_coordinate_system(name: str, coord_names: Optional[List[str]] = None) -> str:
+    """Creates a 3D coordinate system for vector calculus operations.
+
+    Args:
+        name: The name for the coordinate system.
+        coord_names: Optional list of coordinate names (3 names for x, y, z).
+                    If not provided, defaults to [name+'_x', name+'_y', name+'_z'].
+
+    Example:
+        # Create a coordinate system
+        coord_sys = create_coordinate_system("R")
+        # Creates a coordinate system R with coordinates R_x, R_y, R_z
+
+        # Create a coordinate system with custom coordinate names
+        coord_sys = create_coordinate_system("C", ["rho", "phi", "z"])
+
+    Returns:
+        The name of the created coordinate system.
+    """
+    if name in coordinate_systems:
+        return f"Warning: Overwriting existing coordinate system '{name}'."
+
+    try:
+        if coord_names and len(coord_names) != 3:
+            return "Error: coord_names must contain exactly 3 names for x, y, z coordinates."
+
+        if coord_names:
+            # Create a CoordSys3D with custom coordinate names
+            cs = CoordSys3D(name, variable_names=coord_names)
+        else:
+            # Create a CoordSys3D with default coordinate naming
+            cs = CoordSys3D(name)
+
+        coordinate_systems[name] = cs
+
+        # Add the coordinate system to the expressions dict to make it accessible
+        # in expressions through parsing
+        expressions[name] = cs
+
+        # Add the coordinate variables to local_vars for easier access
+        for i, base_vector in enumerate(cs.base_vectors()):
+            vector_name = (
+                f"{name}_{['x', 'y', 'z'][i]}"
+                if not coord_names
+                else f"{name}_{coord_names[i]}"
+            )
+            local_vars[vector_name] = base_vector
+
+        return name
+    except Exception as e:
+        return f"Error creating coordinate system: {str(e)}"
+
+
+@mcp.tool()
+def create_vector_field(
+    coord_sys_name: str, component_x: str, component_y: str, component_z: str
+) -> str:
+    """Creates a vector field in the specified coordinate system.
+
+    Args:
+        coord_sys_name: The name of the coordinate system to use.
+        component_x: String expression for the x-component of the vector field.
+        component_y: String expression for the y-component of the vector field.
+        component_z: String expression for the z-component of the vector field.
+
+    Example:
+        # First create a coordinate system
+        create_coordinate_system("R")
+
+        # Create a vector field F = (y, -x, z)
+        vector_field = create_vector_field("R", "R_y", "-R_x", "R_z")
+
+    Returns:
+        A key for the vector field expression.
+    """
+    global expression_counter
+
+    if coord_sys_name not in coordinate_systems:
+        return f"Error: Coordinate system '{coord_sys_name}' not found. Create it first using create_coordinate_system."
+
+    try:
+        cs = coordinate_systems[coord_sys_name]
+
+        # Parse the component expressions
+        parse_dict = {**local_vars, **functions, coord_sys_name: cs}
+        x_comp = parse_expr(component_x, local_dict=parse_dict)
+        y_comp = parse_expr(component_y, local_dict=parse_dict)
+        z_comp = parse_expr(component_z, local_dict=parse_dict)
+
+        # Create the vector field
+        vector_field = (
+            x_comp * cs.base_vectors()[0]
+            + y_comp * cs.base_vectors()[1]
+            + z_comp * cs.base_vectors()[2]
+        )
+
+        # Store the vector field
+        result_key = f"vector_{expression_counter}"
+        expressions[result_key] = vector_field
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error creating vector field: {str(e)}"
+
+
+@mcp.tool()
+def calculate_curl(vector_field_key: str) -> str:
+    """Calculates the curl of a vector field using SymPy's curl function.
+
+    Args:
+        vector_field_key: The key of the vector field expression.
+
+    Example:
+        # First create a coordinate system
+        create_coordinate_system("R")
+
+        # Create a vector field F = (y, -x, 0)
+        vector_field = create_vector_field("R", "R_y", "-R_x", "0")
+
+        # Calculate curl
+        curl_result = calculate_curl(vector_field)
+        # Returns (0, 0, -2)
+
+    Returns:
+        A key for the curl expression.
+    """
+    global expression_counter
+
+    if vector_field_key not in expressions:
+        return f"Error: Vector field with key '{vector_field_key}' not found."
+
+    try:
+        vector_field = expressions[vector_field_key]
+
+        # Calculate curl
+        curl_result = curl(vector_field)
+
+        # Store the result
+        result_key = f"vector_{expression_counter}"
+        expressions[result_key] = curl_result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating curl: {str(e)}"
+
+
+@mcp.tool()
+def calculate_divergence(vector_field_key: str) -> str:
+    """Calculates the divergence of a vector field using SymPy's divergence function.
+
+    Args:
+        vector_field_key: The key of the vector field expression.
+
+    Example:
+        # First create a coordinate system
+        create_coordinate_system("R")
+
+        # Create a vector field F = (x, y, z)
+        vector_field = create_vector_field("R", "R_x", "R_y", "R_z")
+
+        # Calculate divergence
+        div_result = calculate_divergence(vector_field)
+        # Returns 3
+
+    Returns:
+        A key for the divergence expression.
+    """
+    global expression_counter
+
+    if vector_field_key not in expressions:
+        return f"Error: Vector field with key '{vector_field_key}' not found."
+
+    try:
+        vector_field = expressions[vector_field_key]
+
+        # Calculate divergence
+        div_result = divergence(vector_field)
+
+        # Store the result
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = div_result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating divergence: {str(e)}"
+
+
+@mcp.tool()
+def calculate_gradient(scalar_field_key: str) -> str:
+    """Calculates the gradient of a scalar field using SymPy's gradient function.
+
+    Args:
+        scalar_field_key: The key of the scalar field expression.
+
+    Example:
+        # First create a coordinate system
+        create_coordinate_system("R")
+
+        # Create a scalar field f = x^2 + y^2 + z^2
+        scalar_field = introduce_expression("R_x**2 + R_y**2 + R_z**2")
+
+        # Calculate gradient
+        grad_result = calculate_gradient(scalar_field)
+        # Returns (2x, 2y, 2z)
+
+    Returns:
+        A key for the gradient vector field expression.
+    """
+    global expression_counter
+
+    if scalar_field_key not in expressions:
+        return f"Error: Scalar field with key '{scalar_field_key}' not found."
+
+    try:
+        scalar_field = expressions[scalar_field_key]
+
+        # Calculate gradient
+        grad_result = gradient(scalar_field)
+
+        # Store the result
+        result_key = f"vector_{expression_counter}"
+        expressions[result_key] = grad_result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating gradient: {str(e)}"
 
 
 def main():
