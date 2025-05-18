@@ -27,7 +27,7 @@ jobs:
       run: |
         uv venv
         . .venv/bin/activate
-        uv sync --groups dev
+        uv sync --group dev
         
     - name: Lint with Ruff
       run: |
