@@ -25,7 +25,9 @@ jobs:
         tags: sympy-mcp:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        load: true
 
     - name: Test Docker image
       run: |
-        docker run --rm sympy-mcp:latest --version 
+        docker images
+        docker run --rm sympy-mcp:latest python -c "import mcp; print(f'MCP version: {mcp.__version__}')" 

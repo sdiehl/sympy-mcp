@@ -23,17 +23,18 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
         
-    - name: Install dependencies
+    - name: Create virtual environment and install dependencies
       run: |
-        uv pip install mcp[cli]
-        uv sync
+        uv venv
+        . .venv/bin/activate
+        uv sync --groups dev
         
     - name: Lint with Ruff
       run: |
-        uv pip install ruff
+        . .venv/bin/activate
         ruff check .
         
     - name: Test with pytest
       run: |
-        uv pip install pytest
+        . .venv/bin/activate
         pytest 
