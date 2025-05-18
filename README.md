@@ -1,3 +1,7 @@
+<div align="center">
+  <img src=".github/logo.png" alt="Sympy MCP Logo" width="250" />
+</div>
+
 # Sympy MCP Server
 
 This is Model Context Protocol server that exposes stateful symbolic manipulation tools to a LLM. So it can manipulate mathematical expressions and equations.
