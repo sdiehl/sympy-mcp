@@ -12,7 +12,9 @@ Language models are absolutely abysmal at symbolic manipulation. They hallucinat
 
 While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
 
-The server exposes a comprehensive set of symbolic mathematics capabilities including algebraic equation solving, calculus operations like integration and differentiation, vector calculus with curl and divergence, tensor calculus for general relativity, and both ordinary and partial differential equations. For example, the system can handle complex higher-order ODEs like 
+The server exposes a subset of symbolic mathematics capabilities including algebraic equation solving, calculus operations like integration and differentiation, vector calculus with curl and divergence, tensor calculus for general relativity, and both ordinary and partial differential equations. 
+
+For example, you can ask it in natural language to solve a differential equation:
 
 > Solve the damped harmonic oscillator with forcing term: the mass-spring-damper system described by the differential equation where m is mass, c is the damping coefficient, k is the spring constant, and F(t) is an external force.
 
