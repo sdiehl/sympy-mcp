@@ -89,6 +89,53 @@ To configure Claude Desktop to launch the Docker container, edit your `claude_de
 
 This configuration tells Claude Desktop to launch the Docker container when needed. Make sure to build the Docker image (`docker build -t sympy-mcp .`) before using Claude Desktop with this configuration.
 
+## Cursor Installation
+
+In your ~/.cursor/mcp.json, add the following, where `REPLACE_WITH_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
+
+```json
+{
+  "mcpServers": {
+    "sympy-mcp": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": [
+        "run",
+        "--with",
+        "einsteinpy",
+        "--with",
+        "mcp[cli]",
+        "--with",
+        "pydantic",
+        "--with",
+        "sympy",
+        "mcp",
+        "run",
+        "REPLACE_WITH_PATH_TO_SYMPY_MCP/server.py"
+      ]
+    }
+  }
+}
+```
+
+## Cline Integration
+
+To use with [Cline](https://cline.bot/), you need to manually run the MCP server first using the commands in the "Usage" section. Once the MCP server is running, open Cline and select "MCP Servers" at the top.
+
+Then select "Remote Servers" and add the following:
+
+- Server Name: sympy-mcp
+- Server URL: http://127.0.0.1:8081/sse
+
+## 5ire Integration
+
+To set up with 5ire, open [5ire](https://github.com/nanbingxyz/5ire) and go to Tools -> New and set the following configurations:
+
+- Tool Key: sympy-mcp
+- Name: SymPy MCP
+- Command: /opt/homebrew/bin/uv run --with einsteinpy --with mcp[cli] --with pydantic --with sympy mcp run /ABSOLUTE_PATH_TO/server.py
+
+Replace `/ABSOLUTE_PATH_TO/server.py` with the actual path to your sympy-mcp server.py file.
+
 ## Security Disclaimer
 
 This server runs on your computer and gives Claude access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
