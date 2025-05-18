@@ -20,34 +20,6 @@ For example, you can ask it in natural language to solve a differential equation
 
 $$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
 
-## Available Tools
-
-The sympy-mcp server provides the following tools for symbolic mathematics:
-
-- **Variable Introduction** (*intro*) - Introduces a variable with specified assumptions and stores it
-- **Multiple Variable Introduction** (*intro_many*) - Introduces multiple variables with specified assumptions simultaneously
-- **Expression Parser** (*introduce_expression*) - Parses an expression string using available local variables and stores it
-- **LaTeX Printer** (*print_latex_expression*) - Prints a stored expression in LaTeX format, along with variable assumptions
-- **Solver Algebraic/Transcendental Equation** (*solve_algebraically*) - Solves an equation algebraically for a given variable over a given domain
-- **Linear System Solver** (*solve_linear_system*) - Solves a system of linear equations
-- **Nonlinear System Solver** (*solve_nonlinear_system*) - Solves a system of nonlinear equations
-- **Function Variable Introduction** (*introduce_function*) - Introduces a function variable for use in differential equations
-- **Solve Ordinary Differential Equation** (*dsolve_ode*) - Solves an ordinary differential equation
-- **Solve Partial Differential Equation** (*pdsolve_pde*) - Solves a partial differential equation
-- **Create Standard Spacetime Metric** (*create_predefined_metric*) - Creates a predefined spacetime metric (e.g. Schwarzschild, Kerr, Minkowski)
-- **Metric Search** (*search_predefined_metrics*) - Searches available predefined metrics
-- **Tensor Calculator** (*calculate_tensor*) - Calculates tensors from a metric (Ricci, Einstein, Weyl tensors)
-- **Create Custom Spacetime Metric** (*create_custom_metric*) - Creates a custom metric tensor from provided components and symbols
-- **Tensor LaTeX Printer** (*print_latex_tensor*) - Prints a stored tensor expression in LaTeX format
-- **Expression Simplifier** (*simplify_expression*) - Simplifies a mathematical expression
-- **Integration Calculator** (*integrate_expression*) - Integrates an expression with respect to a variable
-- **Differentiation Calculator** (*differentiate_expression*) - Differentiates an expression with respect to a variable
-- **Coordinate System Creator** (*create_coordinate_system*) - Creates a 3D coordinate system for vector calculus operations
-- **Vector Field Creator** (*create_vector_field*) - Creates a vector field in the specified coordinate system
-- **Curl Calculator** (*calculate_curl*) - Calculates the curl of a vector field
-- **Divergence Calculator** (*calculate_divergence*) - Calculates the divergence of a vector field
-- **Gradient Calculator** (*calculate_gradient*) - Calculates the gradient of a scalar field
-
 ## Usage
 
 You need [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
@@ -81,6 +53,35 @@ If you want a completely standalone version that just runs with a single command
 ```shell
 uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
 ```
+
+## Available Tools
+
+The sympy-mcp server provides the following tools for symbolic mathematics:
+
+- **Variable Introduction** (*intro*) - Introduces a variable with specified assumptions and stores it
+- **Multiple Variable Introduction** (*intro_many*) - Introduces multiple variables with specified assumptions simultaneously
+- **Expression Parser** (*introduce_expression*) - Parses an expression string using available local variables and stores it
+- **LaTeX Printer** (*print_latex_expression*) - Prints a stored expression in LaTeX format, along with variable assumptions
+- **Solver Algebraic/Transcendental Equation** (*solve_algebraically*) - Solves an equation algebraically for a given variable over a given domain
+- **Linear System Solver** (*solve_linear_system*) - Solves a system of linear equations
+- **Nonlinear System Solver** (*solve_nonlinear_system*) - Solves a system of nonlinear equations
+- **Function Variable Introduction** (*introduce_function*) - Introduces a function variable for use in differential equations
+- **Solve Ordinary Differential Equation** (*dsolve_ode*) - Solves an ordinary differential equation
+- **Solve Partial Differential Equation** (*pdsolve_pde*) - Solves a partial differential equation
+- **Create Standard Spacetime Metric** (*create_predefined_metric*) - Creates a predefined spacetime metric (e.g. Schwarzschild, Kerr, Minkowski)
+- **Metric Search** (*search_predefined_metrics*) - Searches available predefined metrics
+- **Tensor Calculator** (*calculate_tensor*) - Calculates tensors from a metric (Ricci, Einstein, Weyl tensors)
+- **Create Custom Spacetime Metric** (*create_custom_metric*) - Creates a custom metric tensor from provided components and symbols
+- **Tensor LaTeX Printer** (*print_latex_tensor*) - Prints a stored tensor expression in LaTeX format
+- **Expression Simplifier** (*simplify_expression*) - Simplifies a mathematical expression
+- **Integration Calculator** (*integrate_expression*) - Integrates an expression with respect to a variable
+- **Differentiation Calculator** (*differentiate_expression*) - Differentiates an expression with respect to a variable
+- **Coordinate System Creator** (*create_coordinate_system*) - Creates a 3D coordinate system for vector calculus operations
+- **Vector Field Creator** (*create_vector_field*) - Creates a vector field in the specified coordinate system
+- **Curl Calculator** (*calculate_curl*) - Calculates the curl of a vector field
+- **Divergence Calculator** (*calculate_divergence*) - Calculates the divergence of a vector field
+- **Gradient Calculator** (*calculate_gradient*) - Calculates the gradient of a scalar field
+
 
 ## Usage with Claude Desktop
 
