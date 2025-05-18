@@ -12,6 +12,12 @@ Language models are absolutely abysmal at symbolic manipulation. They hallucinat
 
 While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
 
+The server exposes a comprehensive set of symbolic mathematics capabilities including algebraic equation solving, calculus operations like integration and differentiation, vector calculus with curl and divergence, tensor calculus for general relativity, and both ordinary and partial differential equations. For example, the system can handle complex higher-order ODEs like 
+
+> Solve the damped harmonic oscillator with forcing term: the mass-spring-damper system described by the differential equation where m is mass, c is the damping coefficient, k is the spring constant, and F(t) is an external force.
+
+$$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
+
 ## Available Tools
 
 The sympy-mcp server provides the following tools for symbolic mathematics:
@@ -174,3 +180,65 @@ The other installation methods can also be adapted to work with Docker if you ch
 ## Security Disclaimer
 
 This server runs on your computer and gives Claude access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
+
+## Example Conversation
+
+Here's an example of how the tool-calling works in a conversation with an AI assistant using this MCP server:
+
+**User**: Solve the damped harmonic oscillator with forcing term: the mass-spring-damper system described by the differential equation where m is mass, c is the damping coefficient, k is the spring constant, and F(t) is an external force.
+
+$$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
+
+**Assistant**: (Internal tool call) `intro_many` to introduce variables:
+```json
+{
+  "variables": [
+    {"var_name": "t", "pos_assumptions": ["real"], "neg_assumptions": []},
+    {"var_name": "m", "pos_assumptions": ["real", "positive"], "neg_assumptions": []},
+    {"var_name": "c", "pos_assumptions": ["real", "positive"], "neg_assumptions": []},
+    {"var_name": "k", "pos_assumptions": ["real", "positive"], "neg_assumptions": []}
+  ]
+}
+```
+
+**Assistant**: (Internal tool call) `introduce_function` to define x(t):
+```json
+{
+  "func_name": "x"
+}
+```
+
+**Assistant**: (Internal tool call) `introduce_expression` to create the differential equation:
+```json
+{
+  "expr_str": "Eq(m*Derivative(x(t), t, t) + c*Derivative(x(t), t) + k*x(t), F(t))"
+}
+```
+
+**Assistant**: (Internal tool call) `print_latex_expression` to display the equation nicely:
+```json
+{
+  "expr_key": "expr_12"
+}
+```
+Result: $c \frac{d}{d t} x{\left(t \right)} + k x{\left(t \right)} + m \frac{d^{2}}{d t^{2}} x{\left(t \right)} = F{\left(t \right)}$
+
+**Assistant**: (Internal tool call) `introduce_function` to define F(t):
+```json
+{
+  "func_name": "F"
+}
+```
+
+**Assistant**: (Internal tool call) `dsolve_ode` to solve the differential equation:
+```json
+{
+  "expr_key": "expr_12",
+  "func_name": "x"
+}
+```
+
+Result:
+$$
+x{\left(t \right)} = C_{1} e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + C_{2} e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + \frac{e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} \int F{\left(t \right)} e^{\frac{c t}{2 m}} e^{- \frac{t \sqrt{c^{2} - 4 k m}}{2 m}}\, dt}{\sqrt{c^{2} - 4 k m}} - \frac{e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} \int F{\left(t \right)} e^{\frac{c t}{2 m}} e^{\frac{t \sqrt{c^{2} - 4 k m}}{2 m}}\, dt}{\sqrt{c^{2} - 4 k m}}
+$$
