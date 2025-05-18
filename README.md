@@ -8,11 +8,11 @@ Sympy-MCP is a Model Context Protocol server for allowing LLMs to autonomously p
 
 ## Why?
 
-Language models are absolutely abysmal at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the symbolic kernel do all the heavy lifting.
+Language models are absolutely abysmal at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically built for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the symbolic kernel does all the heavy lifting.
 
-While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
+While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as agent or on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
 
-The server exposes a subset of symbolic mathematics capabilities including algebraic equation solving, calculus operations like integration and differentiation, vector calculus with curl and divergence, tensor calculus for general relativity, and both ordinary and partial differential equations. 
+The server exposes a subset of symbolic mathematics capabilities including algebraic equation solving, integration and differentiation, vector calculus, tensor calculus for general relativity, and both ordinary and partial differential equations. 
 
 For example, you can ask it in natural language to solve a differential equation:
 
@@ -52,6 +52,12 @@ If you want a completely standalone version that just runs with a single command
 
 ```shell
 uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
+```
+
+If you want to do general relativity calculations, you need to install the [`einsteinpy`](https://github.com/einsteinpy/einsteinpy) library.
+
+```shell
+uv sync --group relativity
 ```
 
 ## Available Tools
