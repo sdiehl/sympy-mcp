@@ -50,7 +50,13 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 
 ## Usage
 
+You need uv (`brew install uv` or `curl -LsSf https://astral.sh/uv/install.sh | sh`) first.
+
+Then you can install and run the server with the following commands:
+
 ```bash
+git clone https://github.com/sdiehl/sympy-mcp.git
+cd sympy-mcp
 uv sync
 uv run mcp install server.py
 uv run mcp run server.py
@@ -187,7 +193,7 @@ The other installation methods can also be adapted to work with Docker if you ch
 
 ## Security Disclaimer
 
-This server runs on your computer and gives Claude access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
+This server runs on your computer and gives the language model access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
 
 ## Example Conversation
 
