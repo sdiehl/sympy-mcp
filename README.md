@@ -79,7 +79,8 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 - **Tensor Calculator** (*calculate_tensor*) - Calculates tensors from a metric (Ricci, Einstein, Weyl tensors)
 - **Create Custom Spacetime Metric** (*create_custom_metric*) - Creates a custom metric tensor from provided components and symbols
 - **Tensor LaTeX Printer** (*print_latex_tensor*) - Prints a stored tensor expression in LaTeX format
-- **Expression Simplifier** (*simplify_expression*) - Simplifies a mathematical expression
+- **Expression Simplifier** (*simplify_expression*) - Simplifies a mathematical expression using SymPy's canonicalize function
+- **Substitution** (*substitute_expression*) - Substitutes a variable with an expression in another expression
 - **Integration Calculator** (*integrate_expression*) - Integrates an expression with respect to a variable
 - **Differentiation Calculator** (*differentiate_expression*) - Differentiates an expression with respect to a variable
 - **Coordinate System Creator** (*create_coordinate_system*) - Creates a 3D coordinate system for vector calculus operations
@@ -89,6 +90,11 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 - **Gradient Calculator** (*calculate_gradient*) - Calculates the gradient of a scalar field
 - **Unit Converter** (*convert_to_units*) - Converts a quantity to given target units
 - **Unit Simplifier** (*quantity_simplify_units*) - Simplifies a quantity with units
+- **Matrix Creator** (*create_matrix*) - Creates a SymPy matrix from the provided data
+- **Matrix Determinant** (*matrix_determinant*) - Calculates the determinant of a matrix
+- **Matrix Inverse** (*matrix_inverse*) - Calculates the inverse of a matrix
+- **Matrix Eigenvalues** (*matrix_eigenvalues*) - Calculates the eigenvalues of a matrix
+- **Matrix Eigenvectors** (*matrix_eigenvectors*) - Calculates the eigenvectors of a matrix
 
 
 ## Claude Desktop Setup

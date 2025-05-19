@@ -5,12 +5,12 @@ from mcp.server.fastmcp import FastMCP
 import sympy
 import argparse
 import logging
-from typing import List, Dict, Optional, Literal, Any
+from typing import List, Dict, Optional, Literal, Any, Union
 from pydantic import BaseModel
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
 from vars import Assumption, Domain, ODEHint, PDEHint, Metric, Tensor, UnitSystem
-from sympy import Eq, Function, dsolve, diff, integrate, simplify
+from sympy import Eq, Function, dsolve, diff, integrate, simplify, Matrix
 from sympy.solvers.pde import pdsolve
 from sympy.vector import CoordSys3D, curl, divergence, gradient
 
@@ -243,35 +243,78 @@ def print_latex_expression(expr_key: str) -> str:
         return f"Error: Expression key '{expr_key}' not found."
 
     expr = expressions[expr_key]
+
+    # Handle dictionary objects (like eigenvalues)
+    if isinstance(expr, dict):
+        if all(isinstance(k, (sympy.Expr, int, float)) for k in expr.keys()):
+            # Format as eigenvalues: {value: multiplicity, ...}
+            parts = []
+            for eigenval, multiplicity in expr.items():
+                parts.append(
+                    f"{sympy.latex(eigenval)} \\text{{ (multiplicity {multiplicity})}}"
+                )
+            return ", ".join(parts)
+        else:
+            # Generic dictionary
+            return str(expr)
+
+    # Handle list objects (like eigenvectors)
+    elif isinstance(expr, list):
+        # For eigenvectors format: [(eigenval, multiplicity, [eigenvectors]), ...]
+        if all(isinstance(item, tuple) and len(item) == 3 for item in expr):
+            parts = []
+            for eigenval, multiplicity, eigenvects in expr:
+                eigenvects_latex = [sympy.latex(v) for v in eigenvects]
+                parts.append(
+                    f"\\lambda = {sympy.latex(eigenval)} \\text{{ (multiplicity {multiplicity})}}:\n"
+                    f"\\text{{Eigenvectors: }}[{', '.join(eigenvects_latex)}]"
+                )
+            return "\n".join(parts)
+        else:
+            # Try to convert each element to LaTeX
+            try:
+                return str([sympy.latex(item) for item in expr])
+            except Exception as e:
+                # Log the exception if there's a logger configured
+                logger.debug(f"Error converting list items to LaTeX: {str(e)}")
+                return str(expr)
+
+    # Original behavior for sympy expressions
     latex_str = sympy.latex(expr)
 
     # Find variables in the expression and their assumptions
-    variables_in_expr = expr.free_symbols
-    assumption_descs = []
-    for var_symbol in variables_in_expr:
-        var_name = str(var_symbol)
-        if var_name in local_vars:
-            # Get assumptions directly from the symbol object
-            current_assumptions = []
-            # sympy stores assumptions in a private attribute _assumptions
-            # and provides a way to query them via .is_commutative, .is_real etc.
-            # We can iterate through known Assumption enum values
-            for assumption_enum_member in Assumption:
-                if getattr(var_symbol, f"is_{assumption_enum_member.value}", False):
-                    current_assumptions.append(assumption_enum_member.value)
+    try:
+        variables_in_expr = expr.free_symbols
+        assumption_descs = []
+        for var_symbol in variables_in_expr:
+            var_name = str(var_symbol)
+            if var_name in local_vars:
+                # Get assumptions directly from the symbol object
+                current_assumptions = []
+                # sympy stores assumptions in a private attribute _assumptions
+                # and provides a way to query them via .is_commutative, .is_real etc.
+                # We can iterate through known Assumption enum values
+                for assumption_enum_member in Assumption:
+                    if getattr(var_symbol, f"is_{assumption_enum_member.value}", False):
+                        current_assumptions.append(assumption_enum_member.value)
 
-            if current_assumptions:
-                assumption_descs.append(
-                    f"{var_name} is {', '.join(current_assumptions)}"
-                )
+                if current_assumptions:
+                    assumption_descs.append(
+                        f"{var_name} is {', '.join(current_assumptions)}"
+                    )
+                else:
+                    assumption_descs.append(
+                        f"{var_name} (no specific assumptions listed)"
+                    )
             else:
-                assumption_descs.append(f"{var_name} (no specific assumptions listed)")
-        else:
-            assumption_descs.append(f"{var_name} (undefined in local_vars)")
+                assumption_descs.append(f"{var_name} (undefined in local_vars)")
 
-    if assumption_descs:
-        return f"{latex_str} (where {'; '.join(assumption_descs)})"
-    else:
+        if assumption_descs:
+            return f"{latex_str} (where {'; '.join(assumption_descs)})"
+        else:
+            return latex_str
+    except AttributeError:
+        # If expr doesn't have free_symbols, just return the LaTeX
         return latex_str
 
 
@@ -1477,6 +1520,289 @@ def initialize_units():
 
 # Call to initialize units
 initialize_units()
+
+
+@mcp.tool()
+def create_matrix(
+    matrix_data: List[List[Union[int, float, str]]],
+    matrix_var_name: Optional[str] = None,
+) -> str:
+    """Creates a SymPy matrix from the provided data.
+
+    Args:
+        matrix_data: A list of lists representing the rows and columns of the matrix.
+                    Each element can be a number or a string expression.
+        matrix_var_name: Optional name for storing the matrix. If not provided, a
+                         sequential name will be generated.
+
+    Example:
+        # Create a 2x2 matrix with numeric values
+        matrix_key = create_matrix([[1, 2], [3, 4]], "M")
+
+        # Create a matrix with symbolic expressions (assuming x, y are defined)
+        matrix_key = create_matrix([["x", "y"], ["x*y", "x+y"]])
+
+    Returns:
+        A key for the stored matrix.
+    """
+    global expression_counter
+
+    try:
+        # Process each element to handle expressions
+        processed_data = []
+        for row in matrix_data:
+            processed_row = []
+            for elem in row:
+                if isinstance(elem, (int, float)):
+                    processed_row.append(elem)
+                else:
+                    # Parse the element as an expression using local variables
+                    parse_dict = {**local_vars, **functions}
+                    parsed_elem = parse_expr(str(elem), local_dict=parse_dict)
+                    processed_row.append(parsed_elem)
+            processed_data.append(processed_row)
+
+        # Create the SymPy matrix
+        matrix = Matrix(processed_data)
+
+        # Generate a key for the matrix
+        if matrix_var_name is None:
+            matrix_key = f"matrix_{expression_counter}"
+            expression_counter += 1
+        else:
+            matrix_key = matrix_var_name
+
+        # Store the matrix in the expressions dictionary
+        expressions[matrix_key] = matrix
+
+        return matrix_key
+    except Exception as e:
+        return f"Error creating matrix: {str(e)}"
+
+
+@mcp.tool()
+def matrix_determinant(matrix_key: str) -> str:
+    """Calculates the determinant of a matrix using SymPy's det method.
+
+    Args:
+        matrix_key: The key of the matrix to calculate the determinant for.
+
+    Example:
+        # Create a matrix
+        matrix_key = create_matrix([[1, 2], [3, 4]])
+
+        # Calculate its determinant
+        det_key = matrix_determinant(matrix_key)
+        # Results in -2
+
+    Returns:
+        A key for the determinant expression.
+    """
+    global expression_counter
+
+    if matrix_key not in expressions:
+        return f"Error: Matrix with key '{matrix_key}' not found."
+
+    try:
+        matrix = expressions[matrix_key]
+
+        # Check if the value is actually a Matrix
+        if not isinstance(matrix, Matrix):
+            return f"Error: '{matrix_key}' is not a matrix."
+
+        # Calculate the determinant
+        det = matrix.det()
+
+        # Store and return the result
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = det
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating determinant: {str(e)}"
+
+
+@mcp.tool()
+def matrix_inverse(matrix_key: str) -> str:
+    """Calculates the inverse of a matrix using SymPy's inv method.
+
+    Args:
+        matrix_key: The key of the matrix to invert.
+
+    Example:
+        # Create a matrix
+        matrix_key = create_matrix([[1, 2], [3, 4]])
+
+        # Calculate its inverse
+        inv_key = matrix_inverse(matrix_key)
+
+    Returns:
+        A key for the inverted matrix.
+    """
+    global expression_counter
+
+    if matrix_key not in expressions:
+        return f"Error: Matrix with key '{matrix_key}' not found."
+
+    try:
+        matrix = expressions[matrix_key]
+
+        # Check if the value is actually a Matrix
+        if not isinstance(matrix, Matrix):
+            return f"Error: '{matrix_key}' is not a matrix."
+
+        # Calculate the inverse
+        inv = matrix.inv()
+
+        # Store and return the result
+        result_key = f"matrix_{expression_counter}"
+        expressions[result_key] = inv
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating inverse: {str(e)}"
+
+
+@mcp.tool()
+def matrix_eigenvalues(matrix_key: str) -> str:
+    """Calculates the eigenvalues of a matrix using SymPy's eigenvals method.
+
+    Args:
+        matrix_key: The key of the matrix to calculate eigenvalues for.
+
+    Example:
+        # Create a matrix
+        matrix_key = create_matrix([[1, 2], [2, 1]])
+
+        # Calculate its eigenvalues
+        evals_key = matrix_eigenvalues(matrix_key)
+
+    Returns:
+        A key for the eigenvalues expression (usually a dictionary mapping eigenvalues to their multiplicities).
+    """
+    global expression_counter
+
+    if matrix_key not in expressions:
+        return f"Error: Matrix with key '{matrix_key}' not found."
+
+    try:
+        matrix = expressions[matrix_key]
+
+        # Check if the value is actually a Matrix
+        if not isinstance(matrix, Matrix):
+            return f"Error: '{matrix_key}' is not a matrix."
+
+        # Calculate the eigenvalues
+        eigenvals = matrix.eigenvals()
+
+        # Store and return the result
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = eigenvals
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating eigenvalues: {str(e)}"
+
+
+@mcp.tool()
+def matrix_eigenvectors(matrix_key: str) -> str:
+    """Calculates the eigenvectors of a matrix using SymPy's eigenvects method.
+
+    Args:
+        matrix_key: The key of the matrix to calculate eigenvectors for.
+
+    Example:
+        # Create a matrix
+        matrix_key = create_matrix([[1, 2], [2, 1]])
+
+        # Calculate its eigenvectors
+        evecs_key = matrix_eigenvectors(matrix_key)
+
+    Returns:
+        A key for the eigenvectors expression (usually a list of tuples (eigenvalue, multiplicity, [eigenvectors])).
+    """
+    global expression_counter
+
+    if matrix_key not in expressions:
+        return f"Error: Matrix with key '{matrix_key}' not found."
+
+    try:
+        matrix = expressions[matrix_key]
+
+        # Check if the value is actually a Matrix
+        if not isinstance(matrix, Matrix):
+            return f"Error: '{matrix_key}' is not a matrix."
+
+        # Calculate the eigenvectors
+        eigenvects = matrix.eigenvects()
+
+        # Store and return the result
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = eigenvects
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error calculating eigenvectors: {str(e)}"
+
+
+@mcp.tool()
+def substitute_expression(
+    expr_key: str, var_name: str, replacement_expr_key: str
+) -> str:
+    """Substitutes a variable in an expression with another expression using SymPy's subs method.
+
+    Args:
+        expr_key: The key of the expression to perform substitution on.
+        var_name: The name of the variable to substitute.
+        replacement_expr_key: The key of the expression to substitute in place of the variable.
+
+    Example:
+        # Create variables x and y
+        intro("x", [], [])
+        intro("y", [], [])
+
+        # Create expressions
+        expr1 = introduce_expression("x**2 + y**2")
+        expr2 = introduce_expression("sin(x)")
+
+        # Substitute y with sin(x) in x^2 + y^2
+        result = substitute_expression(expr1, "y", expr2)
+        # Results in x^2 + sin^2(x)
+
+    Returns:
+        A key for the resulting expression after substitution.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    if var_name not in local_vars:
+        return f"Error: Variable '{var_name}' not found. Please introduce it first."
+
+    if replacement_expr_key not in expressions:
+        return f"Error: Replacement expression with key '{replacement_expr_key}' not found."
+
+    try:
+        expr = expressions[expr_key]
+        var = local_vars[var_name]
+        replacement = expressions[replacement_expr_key]
+
+        # Perform the substitution
+        result = expr.subs(var, replacement)
+
+        # Store and return the result
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = result
+        expression_counter += 1
+
+        return result_key
+    except Exception as e:
+        return f"Error during substitution: {str(e)}"
 
 
 def main():
