@@ -176,21 +176,27 @@ OR manually add the config to your `settings.json` (global):
 
 ```json
 {
-    "mcp": {
-        "servers": {
-            "sympy-mcp": {
-                "command": "uv",
-                "args": [
-                    "run",
-                    "--with", "einsteinpy",
-                    "--with", "mcp[cli]",
-                    "--with", "pydantic",
-                    "--with", "sympy",
-                    "mcp", "run", "/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py"
-                ]
-            }
-        }
+  "mcp": {
+    "servers": {
+      "sympy-mcp": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--with",
+          "einsteinpy",
+          "--with",
+          "mcp[cli]",
+          "--with",
+          "pydantic",
+          "--with",
+          "sympy",
+          "mcp",
+          "run",
+          "/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py"
+        ]
+      }
     }
+  }
 }
 ```
 
