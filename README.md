@@ -17,8 +17,11 @@ The server exposes a subset of symbolic mathematics capabilities including algeb
 For example, you can ask it in natural language to solve a differential equation:
 
 > Solve the damped harmonic oscillator with forcing term: the mass-spring-damper system described by the differential equation where m is mass, c is the damping coefficient, k is the spring constant, and F(t) is an external force.
+> $$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
 
-$$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
+Or involving general relativity:
+
+> Compute the trace of the Ricci tensor $R_{\mu\nu}$ using the inverse metric $g^{\mu\nu}$ for Anti-de Sitter spacetime to determine its constant scalar curvature $R$.
 
 ## Usage
 
@@ -283,7 +286,7 @@ The other installation methods can also be adapted to work with Docker if you ch
 
 This server runs on your computer and gives the language model access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
 
-## Example Conversation
+## Example Interaction 1 : Differential Equations
 
 Here's an example of how the tool-calling works in a conversation with an AI assistant using this MCP server:
 
@@ -349,4 +352,59 @@ Result:
 
 $$
 x{\left(t \right)} = C_{1} e^{\frac{t \left(- c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + C_{2} e^{- \frac{t \left(c + \sqrt{c^{2} - 4 k m}\right)}{2 m}} + \cdots
+$$
+
+## Example Interaction 2: General Relativity
+
+**User**: Compute the trace of the Ricci tensor $R_{\mu\nu}$ using the inverse metric $g^{\mu\nu}$ for Anti-de Sitter spacetime to determine its constant scalar curvature $R$.
+
+**Assistant**: (Internal tool call) `create_predefined_metric` to create the Anti-de Sitter metric:
+```json
+{
+  "metric_name": "AntiDeSitter"
+}
+```
+
+**Assistant**: (Internal tool call) `calculate_tensor` to calculate the Ricci tensor:
+```json
+{
+  "metric_key": "metric_AntiDeSitter",
+  "tensor_type": "RICCI_TENSOR",
+  "simplify_result": true
+}
+```
+
+**Assistant**: (Internal tool call) `print_latex_tensor` to display the Ricci tensor:
+```json
+{
+  "tensor_key": "riccitensor_metric_AntiDeSitter"
+}
+```
+
+Result:
+
+$$
+\left[\begin{matrix}3 & 0 & 0 & 0\\0 & - 3 \cos^{2}{\left(t \right)} & 0 & 0\\0 & 0 & - 3 \cos^{2}{\left(t \right)} \sinh^{2}{\left(\chi \right)} & 0\\0 & 0 & 0 & - 3 \sin^{2}{\left(\theta \right)} \cos^{2}{\left(t \right)} \sinh^{2}{\left(\chi \right)}\end{matrix}\right]
+$$
+
+**Assistant**: (Internal tool call) `calculate_tensor` to calculate the Ricci scalar:
+```json
+{
+  "metric_key": "metric_AntiDeSitter",
+  "tensor_type": "RICCI_SCALAR",
+  "simplify_result": true
+}
+```
+
+**Assistant**: (Internal tool call) `print_latex_tensor` to display the Ricci scalar:
+```json
+{
+  "tensor_key": "ricciscalar_metric_AntiDeSitter"
+}
+```
+
+Result:
+
+$$
+-12
 $$
