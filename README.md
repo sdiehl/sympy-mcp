@@ -89,7 +89,7 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 - **Gradient Calculator** (*calculate_gradient*) - Calculates the gradient of a scalar field
 
 
-## Usage with Claude Desktop
+## Claude Desktop Setup
 
 Normally the `mcp install` command will automatically add the server to the `claude_desktop_config.json` file. If it doesn't you need to find the config file and add the following:
 
@@ -122,7 +122,7 @@ Add the following to the `mcpServers` object, replacing `/ABSOLUTE_PATH_TO_SYMPY
 }
 ```
 
-## Cursor Installation
+## Cursor Setup
 
 In your `~/.cursor/mcp.json`, add the following, where `ABSOLUTE_PATH_TO_SYMPY_MCP` is the path to the sympy-mcp server.py file.
 
@@ -150,7 +150,41 @@ In your `~/.cursor/mcp.json`, add the following, where `ABSOLUTE_PATH_TO_SYMPY_M
 }
 ```
 
-## Cline Installation
+## VS Code Setup
+
+VS Code and VS Code Insiders now support MCPs in [agent mode](https://code.visualstudio.com/blogs/2025/04/07/agentMode). For VS Code, you may need to enable `Chat > Agent: Enable` in the settings.
+
+1. **One-click Setup:**
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sympy-mcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22-p%22%2C%228081%3A8081%22%2C%22--rm%22%2C%22ghcr.io%2Fsdiehl%2Fsympy-mcp%3Alatest%22%5D%7D)
+
+[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=sympy-mcp&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22-p%22%2C%228081%3A8081%22%2C%22--rm%22%2C%22ghcr.io%2Fsdiehl%2Fsympy-mcp%3Alatest%22%5D%7D&quality=insiders)
+
+OR manually add the config to your `settings.json` (global):
+
+```json
+{
+    "mcp": {
+        "servers": {
+            "sympy-mcp": {
+                "command": "uv",
+                "args": [
+                    "run",
+                    "--with", "einsteinpy",
+                    "--with", "mcp[cli]",
+                    "--with", "pydantic",
+                    "--with", "sympy",
+                    "mcp", "run", "/ABSOLUTE_PATH_TO_SYMPY_MCP/server.py"
+                ]
+            }
+        }
+    }
+}
+```
+
+2. Click "Start" above the server config, open a Python or math file, switch to agent mode in the chat, and try commands like "integrate x^2" or "solve x^2 = 1" to get started.
+
+## Cline Setup
 
 To use with [Cline](https://cline.bot/), you need to manually run the MCP server first using the commands in the "Usage" section. Once the MCP server is running, open Cline and select "MCP Servers" at the top.
 
@@ -159,7 +193,7 @@ Then select "Remote Servers" and add the following:
 - Server Name: `sympy-mcp`
 - Server URL: `http://127.0.0.1:8081/sse`
 
-## 5ire Installation
+## 5ire Setup
 
 Another MCP client that supports multiple models (o3, o4-mini, DeepSeek-R1, etc.) on the backend is 5ire.
 
