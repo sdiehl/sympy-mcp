@@ -150,3 +150,4 @@ class UnitSystem(Enum):
     MKSA = "MKSA"
     NATURAL = "natural"
     SI = "SI"
+    CGS = "cgs"

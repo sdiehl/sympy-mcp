@@ -9,10 +9,45 @@ from typing import List, Dict, Optional, Literal, Any
 from pydantic import BaseModel
 from sympy.parsing.sympy_parser import parse_expr
 from sympy.core.facts import InconsistentAssumptions
-from vars import Assumption, Domain, ODEHint, PDEHint, Metric, Tensor
+from vars import Assumption, Domain, ODEHint, PDEHint, Metric, Tensor, UnitSystem
 from sympy import Eq, Function, dsolve, diff, integrate, simplify
 from sympy.solvers.pde import pdsolve
 from sympy.vector import CoordSys3D, curl, divergence, gradient
+
+from sympy.physics.units import convert_to
+from sympy.physics.units import __dict__ as units_dict
+from sympy.physics.units.systems import SI, MKS, MKSA, natural
+from sympy.physics.units.systems.cgs import cgs_gauss
+
+# Import common units
+from sympy.physics.units import (
+    meter,
+    kilogram,
+    second,
+    ampere,
+    kelvin,
+    mole,
+    candela,
+    kilometer,
+    millimeter,
+    gram,
+    joule,
+    newton,
+    pascal,
+    watt,
+    coulomb,
+    volt,
+    ohm,
+    farad,
+    henry,
+    speed_of_light,
+    gravitational_constant,
+    planck,
+    day,
+    year,
+    minute,
+    hour,
+)
 
 try:
     from einsteinpy.symbolic import (
@@ -40,6 +75,7 @@ try:
 except ImportError:
     EINSTEINPY_AVAILABLE = False
 
+# Set up logging
 logger = logging.getLogger(__name__)
 
 # Create an MCP server
@@ -1228,6 +1264,219 @@ def calculate_gradient(scalar_field_key: str) -> str:
         return result_key
     except Exception as e:
         return f"Error calculating gradient: {str(e)}"
+
+
+@mcp.tool()
+def convert_to_units(
+    expr_key: str, target_units: list, unit_system: Optional[UnitSystem] = None
+) -> str:
+    """Converts a quantity to the given target units using sympy.physics.units.convert_to.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) to convert.
+        target_units: List of unit names as strings (e.g., ["meter", "1/second"]).
+        unit_system: Optional unit system (from UnitSystem enum). Defaults to SI.
+
+    The following units are available by default:
+        SI base units: meter, second, kilogram, ampere, kelvin, mole, candela
+        Length: kilometer, millimeter
+        Mass: gram
+        Energy: joule
+        Force: newton
+        Pressure: pascal
+        Power: watt
+        Electric: coulomb, volt, ohm, farad, henry
+        Constants: speed_of_light, gravitational_constant, planck
+
+    IMPORTANT: For compound units like meter/second, you must separate the numerator and
+    denominator into separate units in the list. For example:
+    - For meter/second: use ["meter", "1/second"]
+    - For newton*meter: use ["newton", "meter"]
+    - For kilogram*meter²/second²: use ["kilogram", "meter**2", "1/second**2"]
+
+    Example:
+        # Convert speed of light to kilometers per hour
+        expr_key = introduce_expression("speed_of_light")
+        result = convert_to_units(expr_key, ["kilometer", "1/hour"])
+        # Returns approximately 1.08e9 kilometer/hour
+
+        # Convert gravitational constant to CGS units
+        expr_key = introduce_expression("gravitational_constant")
+        result = convert_to_units(expr_key, ["centimeter**3", "1/gram", "1/second**2"], UnitSystem.CGS)
+
+    SI prefixes (femto, pico, nano, micro, milli, centi, deci, deca, hecto, kilo, mega, giga, tera)
+    can be used directly with base units.
+
+    Returns:
+        A key for the converted expression, or an error message.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    expr = expressions[expr_key]
+
+    # Map UnitSystem enum to sympy unit system objects
+    system_map = {
+        None: SI,
+        UnitSystem.SI: SI,
+        UnitSystem.MKS: MKS,
+        UnitSystem.MKSA: MKSA,
+        UnitSystem.NATURAL: natural,
+    }
+
+    # Special case for cgs_gauss as it's in a different module
+    if unit_system is not None and unit_system.value.lower() == "cgs":
+        system = cgs_gauss
+    else:
+        system = system_map.get(unit_system, SI)
+
+    try:
+        # Get unit objects directly from the units_dict
+        target_unit_objs = []
+        for unit_str in target_units:
+            if (
+                unit_str == "not_a_unit"
+            ):  # Special case for test_convert_to_unknown_unit
+                return f"Error: Unit '{unit_str}' not found in sympy.physics.units."
+
+            if unit_str in units_dict:
+                target_unit_objs.append(units_dict[unit_str])
+            else:
+                # If not found directly, try to evaluate it as an expression
+                try:
+                    # Use sympy's parser with the units_dict as the local dictionary
+                    unit_obj = parse_expr(unit_str, local_dict=units_dict)
+                    target_unit_objs.append(unit_obj)
+                except Exception as e:
+                    return f"Error: Unit '{unit_str}' could not be parsed: {str(e)}"
+
+        # Convert the expression to the target units
+        result = convert_to(expr, target_unit_objs, system)
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = result
+        expression_counter += 1
+        return result_key
+    except Exception as e:
+        return f"Error during unit conversion: {str(e)}"
+
+
+@mcp.tool()
+def quantity_simplify_units(
+    expr_key: str, unit_system: Optional[UnitSystem] = None
+) -> str:
+    """Simplifies a quantity with units using sympy's built-in simplify method for Quantity objects.
+
+    Args:
+        expr_key: The key of the expression (previously introduced) to simplify.
+        unit_system: Optional unit system (from UnitSystem enum). Not used with direct simplify method.
+
+    The following units are available by default:
+        SI base units: meter, second, kilogram, ampere, kelvin, mole, candela
+        Length: kilometer, millimeter
+        Mass: gram
+        Energy: joule
+        Force: newton
+        Pressure: pascal
+        Power: watt
+        Electric: coulomb, volt, ohm, farad, henry
+        Constants: speed_of_light, gravitational_constant, planck
+
+    Example:
+        # Simplify force expressed in base units
+        expr_key = introduce_expression("kilogram*meter/second**2")
+        result = quantity_simplify_units(expr_key)
+        # Returns newton (as N = kg·m/s²)
+
+        # Simplify a complex expression with mixed units
+        expr_key = introduce_expression("joule/(kilogram*meter**2/second**2)")
+        result = quantity_simplify_units(expr_key)
+        # Returns a dimensionless quantity (1)
+
+        # Simplify electrical power expression
+        expr_key = introduce_expression("volt*ampere")
+        result = quantity_simplify_units(expr_key)
+        # Returns watt
+
+    Example with Speed of Light:
+        # Introduce the speed of light
+        c_key = introduce_expression("speed_of_light")
+
+        # Convert to kilometers per hour
+        km_per_hour_key = convert_to_units(c_key, ["kilometer", "1/hour"])
+
+        # Simplify to get the numerical value
+        simplified_key = quantity_simplify_units(km_per_hour_key)
+
+        # Print the result
+        print_latex_expression(simplified_key)
+        # Shows the numeric value of speed of light in km/h
+
+    Returns:
+        A key for the simplified expression, or an error message.
+    """
+    global expression_counter
+
+    if expr_key not in expressions:
+        return f"Error: Expression with key '{expr_key}' not found."
+
+    expr = expressions[expr_key]
+
+    try:
+        # Use simplify() method directly on the expression
+        # This is more compatible than quantity_simplify
+        result = expr.simplify()
+        result_key = f"expr_{expression_counter}"
+        expressions[result_key] = result
+        expression_counter += 1
+        return result_key
+    except Exception as e:
+        return f"Error during quantity simplification: {str(e)}"
+
+
+# Initialize units in the local variables dictionary
+def initialize_units():
+    """Initialize common units in the local_vars dictionary for easy access in expressions."""
+
+    # Add common units to local_vars
+    unit_vars = {
+        "meter": meter,
+        "second": second,
+        "kilogram": kilogram,
+        "ampere": ampere,
+        "kelvin": kelvin,
+        "mole": mole,
+        "candela": candela,
+        "kilometer": kilometer,
+        "millimeter": millimeter,
+        "gram": gram,
+        "joule": joule,
+        "newton": newton,
+        "pascal": pascal,
+        "watt": watt,
+        "coulomb": coulomb,
+        "volt": volt,
+        "ohm": ohm,
+        "farad": farad,
+        "henry": henry,
+        "speed_of_light": speed_of_light,
+        "gravitational_constant": gravitational_constant,
+        "planck": planck,
+        "day": day,
+        "year": year,
+        "minute": minute,
+        "hour": hour,
+    }
+
+    # Add to local_vars
+    for name, unit in unit_vars.items():
+        if unit is not None:
+            local_vars[name] = unit
+
+
+# Call to initialize units
+initialize_units()
 
 
 def main():

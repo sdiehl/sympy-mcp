@@ -87,6 +87,8 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 - **Curl Calculator** (*calculate_curl*) - Calculates the curl of a vector field
 - **Divergence Calculator** (*calculate_divergence*) - Calculates the divergence of a vector field
 - **Gradient Calculator** (*calculate_gradient*) - Calculates the gradient of a scalar field
+- **Unit Converter** (*convert_to_units*) - Converts a quantity to given target units
+- **Unit Simplifier** (*quantity_simplify_units*) - Simplifies a quantity with units
 
 
 ## Claude Desktop Setup
