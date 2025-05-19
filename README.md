@@ -282,10 +282,6 @@ This configuration tells Claude Desktop to launch the Docker container when need
 
 The other installation methods can also be adapted to work with Docker if you change the uv command to use the docker run command instead.
 
-## Security Disclaimer
-
-This server runs on your computer and gives the language model access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
-
 ## Example Interaction 1 : Differential Equations
 
 Here's an example of how the tool-calling works in a conversation with an AI assistant using this MCP server:
@@ -408,3 +404,14 @@ Result:
 $$
 -12
 $$
+
+## Security Disclaimer
+
+This server runs on your computer and gives the language model access to run Python logic. Notably it uses Sympy's `parse_expr` to parse mathematical expressions, which is uses `eval` under the hood, effectively allowing arbitrary code execution. By running the server, you are trusting the code that Claude generates. Running in the Docker image is slightly safer, but it's still a good idea to review the code before running it.
+
+
+## License
+
+Copyright 2025 Stephen Diehl.
+
+This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
