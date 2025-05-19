@@ -10,7 +10,7 @@ Sympy-MCP is a Model Context Protocol server for allowing LLMs to autonomously p
 
 Language models are absolutely abysmal at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically built for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the symbolic kernel does all the heavy lifting.
 
-While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as agent or on-the-fly calculator, it's a better user experience to use the MCP server and expose the symbolic tools directly.
+While you can certainly have an LLM generate Mathematica or Python code, if you want to use the LLM as an agent or on-the-fly calculator, it's a better experience to use the MCP server and expose the symbolic tools directly.
 
 The server exposes a subset of symbolic mathematics capabilities including algebraic equation solving, integration and differentiation, vector calculus, tensor calculus for general relativity, and both ordinary and partial differential equations. 
 
@@ -46,13 +46,9 @@ uv run mcp install server.py
 uv run mcp run server.py
 ```
 
-For development, you can run the server in watch mode:
+You should see the server available in the Claude Desktop app now. For other clients, see below.
 
-```shell
-uv run mcp dev server.py
-```
-
-If you want a completely standalone version that just runs with a single command, you can use the following. *Note this is pulling arbitrary code from Github, so be careful.*
+If you want a completely standalone version that just runs with a single command, you can use the following. *Note this is running arbitrary code from Github, so be careful.*
 
 ```shell
 uv run --with https://github.com/sdiehl/sympy-mcp/releases/download/0.1/sympy_mcp-0.1.0-py3-none-any.whl python server.py
@@ -68,7 +64,7 @@ uv sync --group relativity
 
 The sympy-mcp server provides the following tools for symbolic mathematics:
 
-| Tool | ID | Description |
+| Tool | Tool ID | Description |
 |------|-------|-------------|
 | Variable Introduction | `intro` | Introduces a variable with specified assumptions and stores it |
 | Multiple Variables | `intro_many` | Introduces multiple variables with specified assumptions simultaneously |
