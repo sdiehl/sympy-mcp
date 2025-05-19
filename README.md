@@ -17,7 +17,8 @@ The server exposes a subset of symbolic mathematics capabilities including algeb
 For example, you can ask it in natural language to solve a differential equation:
 
 > Solve the damped harmonic oscillator with forcing term: the mass-spring-damper system described by the differential equation where m is mass, c is the damping coefficient, k is the spring constant, and F(t) is an external force.
-> $$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
+
+$$ m\frac{d^2x}{dt^2} + c\frac{dx}{dt} + kx = F(t) $$
 
 Or involving general relativity:
 
