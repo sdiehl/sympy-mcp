@@ -1518,8 +1518,37 @@ def initialize_units():
             local_vars[name] = unit
 
 
-# Call to initialize units
-initialize_units()
+@mcp.tool()
+def reset_state() -> str:
+    """Resets the state of the SymPy MCP server.
+
+    Clears all stored variables, functions, expressions, metrics, tensors,
+    coordinate systems, and resets the expression counter.
+
+    Then reinitializes unit variables.
+
+    Runs after all tool calls for a given computation are done to reset the state for the next computation.
+
+    Returns:
+        A message confirming the reset.
+    """
+    global local_vars, functions, expressions, metrics, tensor_objects, coordinate_systems, expression_counter
+
+    # Clear all dictionaries
+    local_vars.clear()
+    functions.clear()
+    expressions.clear()
+    metrics.clear()
+    tensor_objects.clear()
+    coordinate_systems.clear()
+
+    # Reset expression counter
+    expression_counter = 0
+
+    # Reinitialize units
+    initialize_units()
+
+    return "State reset successfully. All variables, functions, expressions, and other objects have been cleared."
 
 
 @mcp.tool()
@@ -1826,6 +1855,9 @@ def main():
         help="Transport protocol for MCP, default: stdio",
     )
     args = parser.parse_args()
+
+    # Call to initialize units
+    initialize_units()
 
     if args.transport == "sse":
         try:
