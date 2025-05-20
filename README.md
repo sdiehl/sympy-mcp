@@ -6,6 +6,10 @@
 
 Sympy-MCP is a Model Context Protocol server for allowing LLMs to autonomously perform symbolic mathematics and computer algebra. It exposes numerous tools from SymPy's core functionality to MCP clients for manipulating mathematical expressions and equations.
 
+<a href="https://glama.ai/mcp/servers/@sdiehl/sympy-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@sdiehl/sympy-mcp/badge" alt="Symbolic Algebra Server MCP server" />
+</a>
+
 ## Why?
 
 Language models are absolutely abysmal at symbolic manipulation. They hallucinate variables, make up random constants, permute terms and generally make a mess. But we have computer algebra systems specifically built for symbolic manipulation, so we can use tool-calling to orchestrate a sequence of transforms so that the symbolic kernel does all the heavy lifting.
