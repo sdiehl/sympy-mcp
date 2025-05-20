@@ -98,18 +98,14 @@ The sympy-mcp server provides the following tools for symbolic mathematics:
 | Eigenvalues | `matrix_eigenvalues` | Calculates the eigenvalues of a matrix |
 | Eigenvectors | `matrix_eigenvectors` | Calculates the eigenvectors of a matrix |
 
-By default all variables have to be predefined with assumptions (similar to how the [symbols()](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols) function works in SymPy). The defaut assumptions is that a variable is complex, commutative, term over the complex field $\mathbb{C}$.
+By default variables are predefined with assumptions (similar to how the [symbols()](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols) function works in SymPy). Unless otherwise specified the defaut assumptions is that a variable is complex, commutative, term over the complex field $\mathbb{C}$.
 
 | Property | Value |
 |----------|-------|
 | `commutative` | true |
 | `complex` | true |
-| `extended_nonnegative` | true |
-| `extended_nonzero` | true |
-| `extended_positive` | true |
-| `extended_real` | true |
 | `finite` | true |
-| `hermitian` | true |
+| `infinite` | false |
 
 ## Claude Desktop Setup
 
