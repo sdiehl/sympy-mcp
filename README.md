@@ -28,8 +28,8 @@ Or involving general relativity:
 
 You need [uv](https://docs.astral.sh/uv/getting-started/installation/) first.
 
-- **Homebrew** - `brew install uv`
-- **Curl** - `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- **Homebrew** : `brew install uv`
+- **Curl** : `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 Then you can install and run the server with the following commands:
 
@@ -206,7 +206,7 @@ OR manually add the config to your `settings.json` (global):
 }
 ```
 
-2. Click "Start" above the server config, open a Python or math file, switch to agent mode in the chat, and try commands like "integrate x^2" or "solve x^2 = 1" to get started.
+2. Click "Start" above the server config switch to agent mode in the chat, and try commands like "integrate x^2" or "solve x^2 = 1" to get started.
 
 ## Cline Setup
 
