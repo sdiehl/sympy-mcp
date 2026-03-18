@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/sdiehl-sympy-mcp-badge.png)](https://mseep.ai/app/sdiehl-sympy-mcp)
+
 <div align="center">
   <img src=".github/logo.png" alt="Sympy MCP Logo" width="400" />
 </div>
