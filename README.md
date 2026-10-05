@@ -1,8 +1,6 @@
-<div align="center">
-  <img src=".github/logo.png" alt="Sympy MCP Logo" width="400" />
-</div>
-
 # Symbolic Algebra MCP Server
+
+**This library is no longer maintained. It is Apache licensed, so feel free to fork it.**
 
 Sympy-MCP is a Model Context Protocol server for allowing LLMs to autonomously perform symbolic mathematics and computer algebra. It exposes numerous tools from SymPy's core functionality to MCP clients for manipulating mathematical expressions and equations.
 
@@ -207,27 +205,6 @@ OR manually add the config to your `settings.json` (global):
 ```
 
 2. Click "Start" above the server config switch to agent mode in the chat, and try commands like "integrate x^2" or "solve x^2 = 1" to get started.
-
-## Cline Setup
-
-To use with [Cline](https://cline.bot/), you need to manually run the MCP server first using the commands in the "Usage" section. Once the MCP server is running, open Cline and select "MCP Servers" at the top.
-
-Then select "Remote Servers" and add the following:
-
-- Server Name: `sympy-mcp`
-- Server URL: `http://127.0.0.1:8081/sse`
-
-## 5ire Setup
-
-Another MCP client that supports multiple models (o3, o4-mini, DeepSeek-R1, etc.) on the backend is 5ire.
-
-To set up with [5ire](https://github.com/nanbingxyz/5ire), open 5ire and go to Tools -> New and set the following configurations:
-
-- Tool Key: `sympy-mcp`
-- Name: SymPy MCP
-- Command: `/opt/homebrew/bin/uv run --with einsteinpy --with mcp[cli] --with pydantic --with sympy mcp run /ABSOLUTE_PATH_TO/server.py`
-
-Replace `/ABSOLUTE_PATH_TO/server.py` with the actual path to your sympy-mcp server.py file.
 
 ## HTTP Transport (Streamable HTTP / SSE)
 
@@ -445,11 +422,11 @@ $$
 
 ## Example Interaction 3: Coupled ODE System (Fluid Dynamics)
 
-This example demonstrates solving a coupled system of ODEs and verifying the solution against an algebraic steady-state analysis — a task where LLMs typically hallucinate without a CAS to ground each step.
+This example demonstrates solving a coupled system of ODEs and verifying the solution against an algebraic steady-state analysis, a task where LLMs typically hallucinate without a CAS to ground each step.
 
 **User**:
 
-> Use the sympy-mcp tools to solve this symbolically — do not compute by hand.
+> Use the sympy-mcp tools to solve this symbolically. Do not compute by hand.
 >
 > Two cylindrical tanks are connected by a pipe. Tank 1 has cross-sectional area A₁ = 2 m² and receives a constant inflow of Q = 0.5 m³/s. Water drains from Tank 1 into Tank 2 through a pipe with flow rate proportional to the height difference: q₁₂ = k·(h₁ - h₂) where k = 0.3 m²/s. Tank 2 has cross-sectional area A₂ = 1 m² and drains to the outside at rate q₂ = k·h₂ with the same k.
 >
@@ -457,17 +434,17 @@ This example demonstrates solving a coupled system of ODEs and verifying the sol
 
 **Assistant**: (Internal tool chain)
 
-1. `intro_many` — introduce `t`, `k`, `A1`, `A2`, `Q` with real/positive assumptions
-2. `introduce_function` × 2 — introduce `h1(t)` and `h2(t)` as unknown functions
-3. `introduce_expression` × 2 — encode the mass-balance ODEs:
+1. `intro_many`: introduce `t`, `k`, `A1`, `A2`, `Q` with real/positive assumptions
+2. `introduce_function` × 2: introduce `h1(t)` and `h2(t)` as unknown functions
+3. `introduce_expression` × 2: encode the mass-balance ODEs:
 
 $$A_1 \frac{dh_1}{dt} = Q - k(h_1 - h_2), \quad A_2 \frac{dh_2}{dt} = k(h_1 - h_2) - k h_2$$
 
-4. `substitute_expression` — substitute numeric values for `k`, `A1`, `A2`, `Q`
-5. `dsolve_ode` × 2 — solve the coupled system; apply initial conditions via `substitute_expression`
-6. `introduce_expression` × 2 — encode equilibrium equations (derivatives set to zero)
-7. `solve_linear_system` — solve the 2×2 algebraic system for `h1*`, `h2*`
-8. `print_latex_expression` — display both the time-domain solution and the steady-state values
+4. `substitute_expression`: substitute numeric values for `k`, `A1`, `A2`, `Q`
+5. `dsolve_ode` × 2: solve the coupled system; apply initial conditions via `substitute_expression`
+6. `introduce_expression` × 2: encode equilibrium equations (derivatives set to zero)
+7. `solve_linear_system`: solve the 2×2 algebraic system for `h1*`, `h2*`
+8. `print_latex_expression`: display both the time-domain solution and the steady-state values
 
 ## Security Disclaimer
 
