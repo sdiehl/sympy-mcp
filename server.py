@@ -1,7 +1,7 @@
 # A stateful MCP server that holds a sympy session, with symbol table of variables
 # that can be used in the tools API to define and manipulate expressions.
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 import httpx
@@ -83,19 +83,18 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # Create an MCP server
-mcp = FastMCP(
+mcp = MCPServer(
     "sympy-mcp",
     dependencies=["sympy", "pydantic", "einsteinpy"],
     instructions="Provides access to the Sympy computer algebra system, which can perform symbolic manipulation of mathematical expressions.",
-    host="0.0.0.0",
-    port=8081,
 )
+
+mcp_port = 8081
 
 @mcp.custom_route("/healthcheck", methods=["GET"])
 async def healthcheck(request: Request) -> Response:
     try:
-        port = mcp.settings.port
-        url = f"http://127.0.0.1:{port}/mcp"
+        url = f"http://127.0.0.1:{mcp_port}/mcp"
         headers = {"Accept": "application/json, text/event-stream"}
 
         async with httpx.AsyncClient() as client:
@@ -1918,19 +1917,15 @@ def main():
             logging.basicConfig(level=logging.INFO)
             logging.getLogger("httpx").setLevel(logging.WARNING)
 
-            mcp.settings.log_level = "INFO"
-            mcp.settings.host = args.mcp_host
-            mcp.settings.port = args.mcp_port
-
-            if args.transport == "sse":
-                endpoint = f"http://{mcp.settings.host}:{mcp.settings.port}/sse"
-            else:
-                endpoint = f"http://{mcp.settings.host}:{mcp.settings.port}/mcp"
+            global mcp_port
+            mcp_port = args.mcp_port
+            path = "sse" if args.transport == "sse" else "mcp"
+            endpoint = f"http://{args.mcp_host}:{mcp_port}/{path}"
 
             logger.info(f"Starting MCP server on {endpoint}")
             logger.info(f"Using transport: {args.transport}")
 
-            mcp.run(transport=args.transport)
+            mcp.run(transport=args.transport, host=args.mcp_host, port=mcp_port)
         except KeyboardInterrupt:
             logger.info("Server stopped by user")
     else:
